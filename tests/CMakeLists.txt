@@ -1,0 +1,1 @@
+declare_default_tests()
