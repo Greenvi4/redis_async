@@ -19,19 +19,17 @@ namespace redis_async {
     struct rdalias : std::string {
         using base_type = std::string;
 
-        rdalias()
+        rdalias() noexcept
             : base_type() {
         }
         explicit rdalias(std::string const &rhs)
             : base_type(rhs) {
         }
 
-        void swap(rdalias &rhs) /* no_throw */
-        {
+        void swap(rdalias &rhs) noexcept {
             base_type::swap(rhs);
         }
-        void swap(std::string &rhs) /* no_throw */
-        {
+        void swap(std::string &rhs) noexcept {
             base_type::swap(rhs);
         }
 
@@ -48,12 +46,12 @@ namespace redis_async {
         rdalias alias;      ///< Alias
         std::string schema; ///< Database connection schema. Currently supported are tcp and socket
         std::string uri;    ///< Connection uri. `host:port` for tcp, `/path/to/file` for socket
-        std::string database; ///< Database id
-        std::string user;     ///< Database user name
-        std::string password; ///< Database user's password
-        bool keep_alive = false;
-        std::chrono::milliseconds connect_timeout{0};
-        std::chrono::milliseconds socket_timeout{0};
+        std::string database;                         ///< Database id
+        std::string user;                             ///< Database user name
+        std::string password;                         ///< Database user's password
+        bool keep_alive = false;                      ///< keep alive connection
+        std::chrono::milliseconds connect_timeout{0}; ///<
+        std::chrono::milliseconds socket_timeout{0};  ///<
 
         /**
          * Parse a connection string
