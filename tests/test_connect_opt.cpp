@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include <redis_async/common.hpp>
+#include <redis_async/error.hpp>
 
 TEST(ConnectOptTest, rdalias) {
     auto value = "main"_rd;
@@ -216,28 +217,30 @@ TEST(ConnectOptTest, uds) {
 
 }
 TEST(ConnectOptTest, wrong_alias) {
-    ASSERT_THROW(auto conn = "tcp://127.0.0.1"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "unix://127.0.0.1dsas"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "=tcp://127.0.0.1"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "="_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = ""_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "hello, world"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main="_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=tcp"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=tcp://"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=://asdds"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=:/"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=://"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?keep"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?keep_alive"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?keepalive"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?keep_alive=1"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?keep_alive=0"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?keep_alive="_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?keepalive=as"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?timeout=10s"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?socket_timeout=a10s"_redis, std::runtime_error);
-    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?socket_timeout=10hour"_redis, std::runtime_error);
+    using redis_async::connection_error;
+
+    ASSERT_THROW(auto conn = "tcp://127.0.0.1"_redis, connection_error);
+    ASSERT_THROW(auto conn = "unix://127.0.0.1dsas"_redis, connection_error);
+    ASSERT_THROW(auto conn = "=tcp://127.0.0.1"_redis, connection_error);
+    ASSERT_THROW(auto conn = "="_redis, connection_error);
+    ASSERT_THROW(auto conn = ""_redis, connection_error);
+    ASSERT_THROW(auto conn = "hello, world"_redis, connection_error);
+    ASSERT_THROW(auto conn = "main="_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=tcp"_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=tcp://"_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=://asdds"_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=:/"_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=://"_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?keep"_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?keep_alive"_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?keepalive"_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?keep_alive=1"_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?keep_alive=0"_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?keep_alive="_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?keepalive=as"_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?timeout=10s"_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?socket_timeout=a10s"_redis, connection_error);
+    ASSERT_THROW(auto conn = "main=tcp://localhost:7432?socket_timeout=10hour"_redis, connection_error);
 }
 
 //TEST(ConnectOptTest, uds) {
