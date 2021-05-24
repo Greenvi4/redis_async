@@ -4,9 +4,9 @@
 
 #include <redis_async/common.hpp>
 
+#include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <tuple>
@@ -22,35 +22,34 @@ namespace redis_async {
             connection_options opts;
             std::string auth;
             std::string path;
-            std::tie(auth, path) = _split_uri(uri, opts);
+            std::tie(auth, path) = split_uri(uri, opts);
 
-            _set_auth_opts(auth, opts);
-            auto parameter_string = _split_path(path, opts);
-            _parse_parameters(parameter_string, opts);
+            set_auth_opts(auth, opts);
+            auto parameter_string = split_path(path, opts);
+            parse_parameters(parameter_string, opts);
 
             return opts;
         }
 
-        static auto _split_uri(const std::string &uri, connection_options &opts)
+        static auto split_uri(const std::string &uri, connection_options &opts)
             -> std::tuple<std::string, std::string>;
-        static void _set_auth_opts(const std::string &auth, connection_options &opts);
-        static auto _split_path(const std::string &path, connection_options &opts) -> std::string;
-        static void _parse_parameters(const std::string &parameter_string,
-                                      connection_options &opts);
-        static void _set_option(const std::string &key, const std::string &val,
-                                connection_options &opts);
+        static void set_auth_opts(const std::string &auth, connection_options &opts);
+        static auto split_path(const std::string &path, connection_options &opts) -> std::string;
+        static void parse_parameters(const std::string &parameter_string, connection_options &opts);
+        static void set_option(const std::string &key, const std::string &val,
+                               connection_options &opts);
         static std::chrono::milliseconds _parse_timeout_option(const std::string &str);
-        static bool _parse_bool_option(const std::string &str);
+        static bool parse_bool_option(const std::string &str);
     };
 
-    auto connect_string_parser::_split_uri(const std::string &uri, connection_options &opts)
+    auto connect_string_parser::split_uri(const std::string &uri, connection_options &opts)
         -> std::tuple<std::string, std::string> {
         auto pos = uri.find("=");
         if (pos == std::string::npos)
             throw std::runtime_error("invalid connection string");
 
         opts.alias = uri.substr(0, pos);
-        if(opts.alias.empty())
+        if (opts.alias.empty())
             throw std::runtime_error("invalid connection string");
 
         auto start = pos + 1;
@@ -60,9 +59,8 @@ namespace redis_async {
             throw std::runtime_error("invalid connection string");
 
         opts.schema = uri.substr(start, pos - start);
-        if(opts.schema.empty())
+        if (opts.schema.empty())
             throw std::runtime_error("invalid connection string");
-
 
         start = pos + 3;
         pos = uri.find("@", start);
@@ -76,7 +74,7 @@ namespace redis_async {
         return std::make_tuple(auth, uri.substr(pos + 1));
     }
 
-    void connect_string_parser::_set_auth_opts(const std::string &auth, connection_options &opts) {
+    void connect_string_parser::set_auth_opts(const std::string &auth, connection_options &opts) {
         if (auth.empty()) {
             // No auth info.
             return;
@@ -91,7 +89,7 @@ namespace redis_async {
             opts.password = auth.substr(pos + 1);
         }
     }
-    auto connect_string_parser::_split_path(const std::string &path, connection_options &opts)
+    auto connect_string_parser::split_path(const std::string &path, connection_options &opts)
         -> std::string {
         auto parameter_pos = path.rfind("?");
         std::string parameter_string;
@@ -115,14 +113,14 @@ namespace redis_async {
             opts.uri = path.substr(0, parameter_pos);
         }
 
-        if(opts.uri.empty())
+        if (opts.uri.empty())
             throw std::runtime_error("invalid connection string");
 
         // No db number specified, and use default one, i.e. 0.
         return parameter_string;
     }
-    void connect_string_parser::_parse_parameters(const std::string &parameter_string,
-                                                  connection_options &opts) {
+    void connect_string_parser::parse_parameters(const std::string &parameter_string,
+                                                 connection_options &opts) {
         if (parameter_string.empty())
             return;
         using Strings = std::vector<std::string>;
@@ -139,13 +137,13 @@ namespace redis_async {
 
             const auto &key = kv_pair[0];
             const auto &val = kv_pair[1];
-            _set_option(key, val, opts);
+            set_option(key, val, opts);
         }
     }
-    void connect_string_parser::_set_option(const std::string &key, const std::string &val,
-                                            connection_options &opts) {
+    void connect_string_parser::set_option(const std::string &key, const std::string &val,
+                                           connection_options &opts) {
         if (key == "keep_alive") {
-            opts.keep_alive = _parse_bool_option(val);
+            opts.keep_alive = parse_bool_option(val);
         } else if (key == "connect_timeout") {
             opts.connect_timeout = _parse_timeout_option(val);
         } else if (key == "socket_timeout") {
@@ -174,7 +172,7 @@ namespace redis_async {
             throw std::runtime_error("unknown timeout unit: " + unit);
         }
     }
-    bool connect_string_parser::_parse_bool_option(const std::string &str) {
+    bool connect_string_parser::parse_bool_option(const std::string &str) {
         auto value = boost::to_lower_copy(str);
         if (value == "true") {
             return true;

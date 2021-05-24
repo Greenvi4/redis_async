@@ -11,10 +11,10 @@
 namespace redis_async {
 
     /**
-     * @brief Short unique string to refer a database.
+     * @brief Short unique string to refer a database alias.
      * Signature structure, to pass instead of connection string
      * @see @ref connstring
-     * @see tip::db::pg::db_service
+     * @see
      */
     struct rdalias : std::string {
         using base_type = std::string;
@@ -57,11 +57,9 @@ namespace redis_async {
          * Parse a connection string
          * @code{.cpp}
          * // Full options for a TCP connection
-         * connection_options opts = "aliasname=tcp://user:password@localhost:5432[database]"_pg;
-         * // SSL connection over TCP
-         * opts = "ssl://localhost:5432[database]"_pg;
+         * connection_options opts = "aliasname=tcp://user:password@localhost:5432/database"_redis;
          * // Connection via UNIX socket
-         * opts = "socket:///tmp/.s.PGSQL.5432[database]"_pg;
+         * opts = "aliasname=unix:///tmp/.s.REDIS.5432/database"_redis;
          * @endcode
          * @see connstring
          */
@@ -73,14 +71,12 @@ namespace redis_async {
 redis_async::rdalias operator"" _rd(const char *, size_t n);
 
 /**
- * User-defined literal for a PostgreSQL connection string
+ * User-defined literal for a Redis connection string
  * @code{.cpp}
  * // Full options for a TCP connection
- * connection_options opts = "aliasname=tcp://user:password@localhost:5432[database]"_pg;
- * // SSL connection over TCP
- * opts = "ssl://localhost:5432[database]"_pg;
+ * connection_options opts = "aliasname=tcp://user:password@localhost:5432/database"_redis;
  * // Connection via UNIX socket
- * opts = "socket:///tmp/.s.PGSQL.5432[database]"_pg;
+ * opts = "aliasname=unix:///tmp/.s.REDIS.5432/database"_redis;
  * @endcode
  */
 redis_async::connection_options operator"" _redis(const char *, size_t);
