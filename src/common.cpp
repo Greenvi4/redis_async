@@ -47,21 +47,21 @@ namespace redis_async {
         -> std::tuple<std::string, std::string> {
         auto pos = uri.find("=");
         if (pos == std::string::npos)
-            throw connection_error("invalid connection string");
+            throw error::connection_error("invalid connection string");
 
         opts.alias = uri.substr(0, pos);
         if (opts.alias.empty())
-            throw connection_error("invalid connection string");
+            throw error::connection_error("invalid connection string");
 
         auto start = pos + 1;
 
         pos = uri.find("://", start);
         if (pos == std::string::npos)
-            throw connection_error("invalid connection string");
+            throw error::connection_error("invalid connection string");
 
         opts.schema = uri.substr(start, pos - start);
         if (opts.schema.empty())
-            throw connection_error("invalid connection string");
+            throw error::connection_error("invalid connection string");
 
         start = pos + 3;
         pos = uri.find("@", start);
@@ -115,7 +115,7 @@ namespace redis_async {
         }
 
         if (opts.uri.empty())
-            throw connection_error("invalid connection string");
+            throw error::connection_error("invalid connection string");
 
         // No db number specified, and use default one, i.e. 0.
         return parameter_string;
@@ -133,7 +133,7 @@ namespace redis_async {
             Strings kv_pair;
             boost::split(kv_pair, parameter, boost::is_any_of("="));
             if (kv_pair.size() != 2) {
-                throw connection_error("invalid option: not a key-value pair: " + parameter);
+                throw error::connection_error("invalid option: not a key-value pair: " + parameter);
             }
 
             const auto &key = kv_pair[0];
@@ -150,7 +150,7 @@ namespace redis_async {
         } else if (key == "socket_timeout") {
             opts.socket_timeout = _parse_timeout_option(val);
         } else {
-            throw connection_error("unknown uri parameter " + key);
+            throw error::connection_error("unknown uri parameter " + key);
         }
     }
     std::chrono::milliseconds connect_string_parser::_parse_timeout_option(const std::string &str) {
@@ -161,7 +161,7 @@ namespace redis_async {
             timeout = std::stoul(str, &pos);
             unit = str.substr(pos);
         } catch (const std::exception &e) {
-            throw connection_error("invalid uri parameter of timeout type: " + str);
+            throw error::connection_error("invalid uri parameter of timeout type: " + str);
         }
         if (unit == "ms") {
             return std::chrono::milliseconds(timeout);
@@ -170,7 +170,7 @@ namespace redis_async {
         } else if (unit == "m") {
             return std::chrono::minutes(timeout);
         } else {
-            throw connection_error("unknown timeout unit: " + unit);
+            throw error::connection_error("unknown timeout unit: " + unit);
         }
     }
     bool connect_string_parser::parse_bool_option(const std::string &str) {
@@ -180,7 +180,7 @@ namespace redis_async {
         } else if (value == "false") {
             return false;
         }
-        throw connection_error("invalid uri parameter of bool type: " + str);
+        throw error::connection_error("invalid uri parameter of bool type: " + str);
     }
 
     connection_options connection_options::parse(const std::string &uri) {

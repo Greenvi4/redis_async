@@ -217,7 +217,7 @@ TEST(ConnectOptTest, uds) {
 
 }
 TEST(ConnectOptTest, wrong_alias) {
-    using redis_async::connection_error;
+    using redis_async::error::connection_error;
 
     ASSERT_THROW(auto conn = "tcp://127.0.0.1"_redis, connection_error);
     ASSERT_THROW(auto conn = "unix://127.0.0.1dsas"_redis, connection_error);
