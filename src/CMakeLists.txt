@@ -11,14 +11,15 @@ set(HEADERS
         ../include/redis_async/error.hpp
         ../include/redis_async/asio_config.hpp
         ../include/redis_async/future_config.hpp
-        transport.hpp)
+        )
 
 add_library(${PROJECT_NAME}
         ${HEADERS}
         redis_async.cpp
         common.cpp
         error.cpp
-        transport.cpp)
+        details/transport.hpp
+        details/transport.cpp)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_SYSTEM_LIBRARIES})
 target_include_directories(${PROJECT_NAME} PUBLIC ../include)
