@@ -15,11 +15,11 @@ namespace redis_async {
     namespace details {
 
         struct tcp_transport {
-            typedef asio_config::io_service_ptr io_service_ptr;
-            typedef asio_config::tcp tcp;
-            typedef asio_config::error_code error_code;
-            typedef std::function<void(error_code const &)> connect_callback;
-            typedef tcp::socket socket_type;
+            using io_service_ptr = asio_config::io_service_ptr;
+            using tcp = asio_config::tcp;
+            using error_code = asio_config::error_code;
+            using connect_callback = std::function<void(error_code const &)>;
+            using socket_type = tcp::socket;
 
             explicit tcp_transport(const io_service_ptr &service);
 
@@ -47,10 +47,10 @@ namespace redis_async {
         };
 
         struct socket_transport {
-            typedef asio_config::io_service_ptr io_service_ptr;
-            typedef asio_config::stream_protocol::socket socket_type;
-            typedef asio_config::error_code error_code;
-            typedef std::function<void(error_code const &)> connect_callback;
+            using io_service_ptr = asio_config::io_service_ptr;
+            using socket_type = asio_config::stream_protocol::socket;
+            using error_code = asio_config::error_code;
+            using connect_callback = std::function<void(error_code const &)>;
 
             explicit socket_transport(const io_service_ptr &service);
 

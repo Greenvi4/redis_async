@@ -18,6 +18,10 @@ add_library(${PROJECT_NAME}
         redis_async.cpp
         common.cpp
         error.cpp
+        details/base_connection.hpp
+        details/base_connection.cpp
+        details/events.hpp
+        details/connection_fsm.hpp
         details/transport.hpp
         details/transport.cpp)
 
