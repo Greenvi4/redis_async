@@ -20,7 +20,6 @@ TEST(ConnectOptTest, tcp_localhost) {
     auto conn = "main=tcp://password@localhost:6379/1"_redis;
     ASSERT_EQ(conn.alias, "main");
     ASSERT_EQ(conn.schema, "tcp");
-    ASSERT_EQ(conn.user, "");
     ASSERT_EQ(conn.password, "password");
     ASSERT_EQ(conn.uri, "localhost:6379");
     ASSERT_EQ(conn.database, "1");
@@ -33,7 +32,6 @@ TEST(ConnectOptTest, tcp_ip) {
     auto conn = "main=tcp://password@192.168.0.10:6379/1"_redis;
     ASSERT_EQ(conn.alias, "main");
     ASSERT_EQ(conn.schema, "tcp");
-    ASSERT_EQ(conn.user, "");
     ASSERT_EQ(conn.password, "password");
     ASSERT_EQ(conn.uri, "192.168.0.10:6379");
     ASSERT_EQ(conn.database, "1");
@@ -42,24 +40,10 @@ TEST(ConnectOptTest, tcp_ip) {
     ASSERT_EQ(conn.socket_timeout, std::chrono::milliseconds(0));
 }
 
-TEST(ConnectOptTest, tcp_ip_password) {
-    auto conn = "main=tcp://user:password@192.168.0.10:6379/1"_redis;
-    ASSERT_EQ(conn.alias, "main");
-    ASSERT_EQ(conn.schema, "tcp");
-    ASSERT_EQ(conn.user, "user");
-    ASSERT_EQ(conn.password, "password");
-    ASSERT_EQ(conn.uri, "192.168.0.10:6379");
-    ASSERT_EQ(conn.database, "1");
-    ASSERT_EQ(conn.keep_alive, false);
-    ASSERT_EQ(conn.connect_timeout, std::chrono::milliseconds(0));
-    ASSERT_EQ(conn.socket_timeout, std::chrono::milliseconds(0));
-}
-
-TEST(ConnectOptTest, without_user) {
+TEST(ConnectOptTest, without_password) {
     auto conn = "main=tcp://192.168.0.10:6379/1"_redis;
     ASSERT_EQ(conn.alias, "main");
     ASSERT_EQ(conn.schema, "tcp");
-    ASSERT_EQ(conn.user, "");
     ASSERT_EQ(conn.password, "");
     ASSERT_EQ(conn.uri, "192.168.0.10:6379");
     ASSERT_EQ(conn.database, "1");
@@ -72,7 +56,6 @@ TEST(ConnectOptTest, without_user_db) {
     auto conn = "main=tcp://192.168.0.10:6379"_redis;
     ASSERT_EQ(conn.alias, "main");
     ASSERT_EQ(conn.schema, "tcp");
-    ASSERT_EQ(conn.user, "");
     ASSERT_EQ(conn.password, "");
     ASSERT_EQ(conn.uri, "192.168.0.10:6379");
     ASSERT_EQ(conn.database, "");
@@ -85,7 +68,6 @@ TEST(ConnectOptTest, without_port) {
     auto conn = "main=tcp://192.168.0.10"_redis;
     ASSERT_EQ(conn.alias, "main");
     ASSERT_EQ(conn.schema, "tcp");
-    ASSERT_EQ(conn.user, "");
     ASSERT_EQ(conn.password, "");
     ASSERT_EQ(conn.uri, "192.168.0.10");
     ASSERT_EQ(conn.database, "");
@@ -98,7 +80,6 @@ TEST(ConnectOptTest, keep_alive) {
     auto conn = "main=tcp://192.168.0.10:6379?keep_alive=true"_redis;
     ASSERT_EQ(conn.alias, "main");
     ASSERT_EQ(conn.schema, "tcp");
-    ASSERT_EQ(conn.user, "");
     ASSERT_EQ(conn.password, "");
     ASSERT_EQ(conn.uri, "192.168.0.10:6379");
     ASSERT_EQ(conn.database, "");
@@ -109,7 +90,6 @@ TEST(ConnectOptTest, keep_alive) {
     conn = "main=tcp://192.168.0.10:6379?keep_alive=false"_redis;
     ASSERT_EQ(conn.alias, "main");
     ASSERT_EQ(conn.schema, "tcp");
-    ASSERT_EQ(conn.user, "");
     ASSERT_EQ(conn.password, "");
     ASSERT_EQ(conn.uri, "192.168.0.10:6379");
     ASSERT_EQ(conn.database, "");
@@ -122,7 +102,6 @@ TEST(ConnectOptTest, socket_timeout) {
     auto conn = "main=tcp://192.168.0.10:6379?socket_timeout=732ms"_redis;
     ASSERT_EQ(conn.alias, "main");
     ASSERT_EQ(conn.schema, "tcp");
-    ASSERT_EQ(conn.user, "");
     ASSERT_EQ(conn.password, "");
     ASSERT_EQ(conn.uri, "192.168.0.10:6379");
     ASSERT_EQ(conn.database, "");
@@ -145,7 +124,6 @@ TEST(ConnectOptTest, connect_timeout) {
     auto conn = "main=tcp://192.168.0.10:6379?connect_timeout=732ms"_redis;
     ASSERT_EQ(conn.alias, "main");
     ASSERT_EQ(conn.schema, "tcp");
-    ASSERT_EQ(conn.user, "");
     ASSERT_EQ(conn.password, "");
     ASSERT_EQ(conn.uri, "192.168.0.10:6379");
     ASSERT_EQ(conn.database, "");
@@ -168,7 +146,6 @@ TEST(ConnectOptTest, combain_opts) {
     auto conn = "main=tcp://192.168.0.10:6379?keep_alive=true&connect_timeout=732ms"_redis;
     ASSERT_EQ(conn.alias, "main");
     ASSERT_EQ(conn.schema, "tcp");
-    ASSERT_EQ(conn.user, "");
     ASSERT_EQ(conn.password, "");
     ASSERT_EQ(conn.uri, "192.168.0.10:6379");
     ASSERT_EQ(conn.database, "");
@@ -194,7 +171,6 @@ TEST(ConnectOptTest, combain_opts) {
     conn = "logs=tcp://127.0.0.1?socket_timeout=50ms&connect_timeout=1s"_redis;
     ASSERT_EQ(conn.alias, "logs");
     ASSERT_EQ(conn.schema, "tcp");
-    ASSERT_EQ(conn.user, "");
     ASSERT_EQ(conn.password, "");
     ASSERT_EQ(conn.uri, "127.0.0.1");
     ASSERT_EQ(conn.database, "");
@@ -207,7 +183,6 @@ TEST(ConnectOptTest, uds) {
     auto conn = "logs=unix:///path/to/socket?socket_timeout=50ms&connect_timeout=1s"_redis;
     ASSERT_EQ(conn.alias, "logs");
     ASSERT_EQ(conn.schema, "unix");
-    ASSERT_EQ(conn.user, "");
     ASSERT_EQ(conn.password, "");
     ASSERT_EQ(conn.uri, "/path/to/socket");
     ASSERT_EQ(conn.database, "");
@@ -242,13 +217,3 @@ TEST(ConnectOptTest, wrong_alias) {
     ASSERT_THROW(auto conn = "main=tcp://localhost:7432?socket_timeout=a10s"_redis, connection_error);
     ASSERT_THROW(auto conn = "main=tcp://localhost:7432?socket_timeout=10hour"_redis, connection_error);
 }
-
-//TEST(ConnectOptTest, uds) {
-//    auto conn = "main=unix://192.168.0.10:6379"_redis;
-//    ASSERT_EQ(conn.alias, "main");
-//    ASSERT_EQ(conn.schema, "tcp");
-//    ASSERT_EQ(conn.user, "user");
-//    ASSERT_EQ(conn.password, "password");
-//    ASSERT_EQ(conn.uri, "192.168.0.10:6379");
-//    ASSERT_EQ(conn.database, "1");
-//}

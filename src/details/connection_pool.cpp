@@ -46,8 +46,6 @@ namespace redis_async {
                 if (co_.database.empty())
                     throw error::connection_error("No database name in database connection string");
 
-                if (co_.user.empty())
-                    throw error::connection_error("No user name in database connection string");
                 LOG4CXX_INFO(logger, "Connection pool max size " << pool_size)
             }
 

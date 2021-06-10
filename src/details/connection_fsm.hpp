@@ -167,9 +167,7 @@ namespace redis_async {
                 if (opts.database.empty()) {
                     throw error::connection_error("No database!");
                 }
-                if (opts.user.empty()) {
-                    throw error::connection_error("User not specified!");
-                }
+
                 conn_opts_ = opts;
                 auto _this = shared_base::shared_from_this();
                 transport_.connect_async(conn_opts_, [_this](asio_config::error_code const &ec) {

@@ -67,7 +67,6 @@ namespace redis_async {
         std::string schema; ///< Database connection schema. Currently supported are tcp and socket
         std::string uri;    ///< Connection uri. `host:port` for tcp, `/path/to/file` for socket
         std::string database;                         ///< Database id
-        std::string user;                             ///< Database user name
         std::string password;                         ///< Database user's password
         bool keep_alive = false;                      ///< keep alive connection
         std::chrono::milliseconds connect_timeout{0}; ///<
@@ -94,7 +93,7 @@ redis_async::rdalias operator"" _rd(const char *, size_t n);
  * User-defined literal for a Redis connection string
  * @code{.cpp}
  * // Full options for a TCP connection
- * connection_options opts = "aliasname=tcp://user:password@localhost:5432/database"_redis;
+ * connection_options opts = "aliasname=tcp://password@localhost:5432/database"_redis;
  * // Connection via UNIX socket
  * opts = "aliasname=unix:///tmp/.s.REDIS.5432/database"_redis;
  * @endcode

@@ -82,13 +82,10 @@ namespace redis_async {
         }
 
         auto pos = auth.find(":");
-        if (pos == std::string::npos) {
-            // No user name.
+        if (pos == std::string::npos)
             opts.password = auth;
-        } else {
-            opts.user = auth.substr(0, pos);
+        else
             opts.password = auth.substr(pos + 1);
-        }
     }
     auto connect_string_parser::split_path(const std::string &path, connection_options &opts)
         -> std::string {

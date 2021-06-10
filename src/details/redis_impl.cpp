@@ -46,12 +46,8 @@ namespace redis_async {
             if (options.database.empty())
                 throw error::connection_error("No database name in database connection string");
 
-            if (options.user.empty())
-                throw error::connection_error("No user name in database connection string");
-
-            if (options.alias.empty()) {
-                //                co.generate_alias();
-            }
+            if (options.alias.empty())
+                throw error::connection_error("No alias name in database connection string");
 
             add_pool(options, std::move(pool_size));
         }
