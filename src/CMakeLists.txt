@@ -25,7 +25,9 @@ add_library(${PROJECT_NAME}
         details/transport.hpp
         details/transport.cpp
         details/connection_pool.cpp
-        details/connection_pool.hpp)
+        details/connection_pool.hpp
+        details/redis_impl.cpp
+        details/redis_impl.hpp)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_SYSTEM_LIBRARIES} log4cxx)
 target_include_directories(${PROJECT_NAME} PUBLIC ../include)

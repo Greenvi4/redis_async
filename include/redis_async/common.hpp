@@ -5,12 +5,13 @@
 #ifndef REDIS_ASYNC_COMMON_HPP
 #define REDIS_ASYNC_COMMON_HPP
 
+#include <redis_async/error.hpp>
+
+#include <boost/optional.hpp>
 #include <chrono>
 #include <functional>
 #include <memory>
 #include <string>
-
-#include <redis_async/error.hpp>
 
 namespace redis_async {
 
@@ -18,7 +19,7 @@ namespace redis_async {
         class basic_connection;
     } // namespace details
     using connection_ptr = std::shared_ptr<details::basic_connection>;
-
+    using optional_size = boost::optional<size_t>;
     using resultset = std::string;
 
     using simple_callback = std::function<void()>;
