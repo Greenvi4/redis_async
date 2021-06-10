@@ -69,11 +69,19 @@ namespace redis_async {
                     events::execute
                     >;
                 // clang-format on
+                template <typename Event>
+                void on_entry(Event const &, connection_fsm_type &) {
+                    LOG4CXX_TRACE(logger, "state[unplugged]: entry")
+                }
+                template <typename Event>
+                void on_exit(Event const &, connection_fsm_type &) {
+                    LOG4CXX_TRACE(logger, "state[unplugged]: exit")
+                }
             };
             struct terminated : terminate_state {
                 template <typename Event>
                 void on_entry(Event const &, connection_fsm_type &fsm) {
-                    LOG4CXX_INFO(logger, "entering: terminated")
+                    LOG4CXX_TRACE(logger, "state[terminated]: entry")
                     fsm.notify_terminated();
                 }
             };
@@ -85,12 +93,16 @@ namespace redis_async {
                 >;
                 // clang-format on
                 void on_entry(connection_options const &opts, connection_fsm_type &fsm) {
+                    LOG4CXX_TRACE(logger, "state[connecting]: entry")
                     fsm.connect_transport(opts);
                 }
-
-                template <typename Event>
-                void on_exit(Event const &, connection_fsm_type &fsm) {
+                void on_exit(events::complete const &, connection_fsm_type &fsm) {
+                    LOG4CXX_TRACE(logger, "state[connecting]: exit by complete")
                     fsm.start_read();
+                }
+                template <typename Event>
+                void on_exit(Event const &, connection_fsm_type &) {
+                    LOG4CXX_TRACE(logger, "state[connecting]: exit by " << demangle<Event>())
                 }
             };
             struct authn : state {
@@ -100,10 +112,19 @@ namespace redis_async {
                     events::execute
                 >;
                 // clang-format on
+                template <typename Event>
+                void on_entry(Event const &, connection_fsm_type &) {
+                    LOG4CXX_TRACE(logger, "state[authn]: entry")
+                }
+                template <typename Event>
+                void on_exit(Event const &, connection_fsm_type &) {
+                    LOG4CXX_TRACE(logger, "state[authn]: exit by " << demangle<Event>())
+                }
             };
             struct idle : state {
                 template <typename Event>
                 void on_entry(Event const &, connection_fsm_type &fsm) {
+                    LOG4CXX_TRACE(logger, "state[idle]: entry")
                     fsm.notify_idle();
                 }
             };
