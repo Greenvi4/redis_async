@@ -43,9 +43,6 @@ namespace redis_async {
             if (options.uri.empty())
                 throw error::connection_error("No URI in database connection string");
 
-            if (options.database.empty())
-                throw error::connection_error("No database name in database connection string");
-
             if (options.alias.empty())
                 throw error::connection_error("No alias name in database connection string");
 

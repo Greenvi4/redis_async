@@ -9,11 +9,30 @@
 
 #include <boost/optional.hpp>
 #include <chrono>
+#include <cxxabi.h>
 #include <functional>
 #include <memory>
 #include <string>
 
 namespace redis_async {
+
+    /**
+     * Type name demangle function
+     * Usage:
+     * @code
+     * ::std::cout << demangle< ::std::iostream >() << "\n"
+     * @endcode
+     * @return Demangled type name
+     */
+    template <typename T>
+    ::std::string demangle() {
+        int status{0};
+        char *ret = abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, &status);
+        ::std::string res{ret};
+        if (ret)
+            free(ret);
+        return res;
+    }
 
     namespace details {
         class basic_connection;

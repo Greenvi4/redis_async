@@ -18,6 +18,9 @@ namespace redis_async {
             using concrete_connection_ptr = std::shared_ptr<connection_type>;
 
             concrete_connection_ptr conn(new connection_type(svc, callbacks));
+            // needed to start the highest-level SM. This will call on_entry and mark the start
+            // of the SM
+            conn->start();
             conn->connect(opts);
             return conn;
         }

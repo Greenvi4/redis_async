@@ -72,19 +72,19 @@ namespace redis_async {
             };
             struct terminated : terminate_state {
                 template <typename Event>
-                void on_enter(Event const &, connection_fsm_type &fsm) {
+                void on_entry(Event const &, connection_fsm_type &fsm) {
                     LOG4CXX_INFO(logger, "entering: terminated")
                     fsm.notify_terminated();
                 }
             };
-            struct connected : state {
+            struct connecting : state {
                 // clang-format off
                 using deferred_events = mpl::vector<
                     events::terminate,
                     events::execute
                 >;
                 // clang-format on
-                void on_enter(connection_options const &opts, connection_fsm_type &fsm) {
+                void on_entry(connection_options const &opts, connection_fsm_type &fsm) {
                     fsm.connect_transport(opts);
                 }
 
@@ -103,7 +103,7 @@ namespace redis_async {
             };
             struct idle : state {
                 template <typename Event>
-                void on_enter(Event const &, connection_fsm_type &fsm) {
+                void on_entry(Event const &, connection_fsm_type &fsm) {
                     fsm.notify_idle();
                 }
             };
@@ -118,14 +118,14 @@ namespace redis_async {
             using initial_state = unplugged;
 
             // clang-format off
-            using transaction_table = mpl::vector<
+            using transition_table = mpl::vector<
                 /*  Start        Event                       Next        Action               */
                 /*+------------+---------------------------+-----------+---------------------+*/
-                tr<unplugged,   connection_options,         connected,  none>,
+                tr<unplugged,   connection_options,         connecting, none>,
                 tr<unplugged,   events::terminate,          terminated, none>,
 
-                tr<connected,   events::complete,           authn,      none>,
-                tr<connected,   error::connection_error,    terminated, on_connection_error>,
+                tr<connecting,  events::complete,           authn,      none>,
+                tr<connecting,  error::connection_error,    terminated, on_connection_error>,
 
                 tr<authn,       events::ready_for_query,    idle,       none>,
                 tr<authn,       error::connection_error,    terminated, on_connection_error>,
@@ -138,6 +138,13 @@ namespace redis_async {
                 tr<query,       error::connection_error,    terminated, on_connection_error>
             >;
             // clang-format on
+            // Replaces the default no-transition response.
+            template <class FSM, class Event>
+            void no_transition(Event const &e, FSM &, int state) {
+                LOG4CXX_ERROR(logger, "no transition from state " << state << " on event "
+                                                                  << demangle<Event>());
+                BOOST_ASSERT(false);
+            }
 
             //@{
             using io_service_ptr = asio_config::io_service_ptr;
@@ -163,9 +170,6 @@ namespace redis_async {
             void connect_transport(connection_options const &opts) {
                 if (opts.uri.empty()) {
                     throw error::connection_error("No connection uri!");
-                }
-                if (opts.database.empty()) {
-                    throw error::connection_error("No database!");
                 }
 
                 conn_opts_ = opts;
@@ -257,6 +261,19 @@ namespace redis_async {
                 }
             }
 
+            void handle_read(asio_config::error_code const &ec, size_t bytes_transferred) {
+                if (!ec) {
+                    // read message
+                    std::istreambuf_iterator<char> in(&incoming_);
+//                    read_message(in, bytes_transferred);
+                    // start async operation again
+                    start_read();
+                } else {
+                    // Socket error - force termination
+                    fsm().process_event(error::connection_error(ec.message()));
+                }
+            }
+
         private:
             asio_config::io_service_ptr io_service_;
             asio_config::io_service::strand strand_;
@@ -281,7 +298,9 @@ namespace redis_async {
                 , callbacks_(std::move(callbacks)) {
             }
 
-            ~concrete_connection() override = default;
+            ~concrete_connection() override {
+                fsm_type::stop();
+            };
 
         protected:
             void notifyIdleImpl() override {
