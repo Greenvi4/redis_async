@@ -54,7 +54,7 @@ namespace redis_async {
 
             explicit socket_transport(const io_service_ptr &service);
 
-            void connect_async(connection_options const &, const connect_callback&);
+            void connect_async(connection_options const &, const connect_callback &);
             bool connected() const;
             void close();
 

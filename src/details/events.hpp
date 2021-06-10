@@ -7,6 +7,7 @@
 
 namespace redis_async {
     namespace details {
+
         namespace events {
 
             struct execute {};
@@ -15,6 +16,7 @@ namespace redis_async {
             struct ready_for_query {};
 
         } // namespace events
+
     } // namespace details
 } // namespace redis_async
 

@@ -6,9 +6,16 @@
 #define REDIS_ASYNC_COMMON_HPP
 
 #include <chrono>
+#include <memory>
 #include <string>
 
 namespace redis_async {
+
+    namespace details {
+        class basic_connection;
+    } // namespace details
+
+    using connection_ptr = std::shared_ptr<details::basic_connection>;
 
     /**
      * @brief Short unique string to refer a database alias.
