@@ -10,7 +10,6 @@
 #include <boost/msm/back/state_machine.hpp>
 #include <boost/msm/front/functor_row.hpp>
 #include <boost/msm/front/state_machine_def.hpp>
-#include <log4cxx/logger.h>
 
 #include <redis_async/asio_config.hpp>
 #include <redis_async/common.hpp>
@@ -24,8 +23,6 @@ namespace redis_async {
 
         namespace msm = boost::msm;
         namespace mpl = boost::mpl;
-
-        auto logger = log4cxx::Logger::getLogger("redis_async.connection");
 
         template <typename TransportType, typename SharedType>
         struct connection_fsm_def

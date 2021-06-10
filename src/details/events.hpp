@@ -5,12 +5,18 @@
 #ifndef REDIS_ASYNC_EVENTS_HPP
 #define REDIS_ASYNC_EVENTS_HPP
 
+#include <redis_async/common.hpp>
+
 namespace redis_async {
     namespace details {
 
         namespace events {
 
-            struct execute {};
+            struct execute {
+                std::string expression;
+                query_result_callback result;
+                error_callback error;
+            };
             struct terminate {};
             struct complete {};
             struct ready_for_query {};

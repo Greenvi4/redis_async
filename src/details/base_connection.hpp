@@ -10,12 +10,15 @@
 #include <redis_async/error.hpp>
 
 #include <boost/noncopyable.hpp>
+#include <log4cxx/logger.h>
 #include <memory>
 
 #include "events.hpp"
 
 namespace redis_async {
     namespace details {
+
+        auto logger = log4cxx::Logger::getLogger("redis_async.connection");
 
         class basic_connection;
         using basic_connection_ptr = std::shared_ptr<basic_connection>;
