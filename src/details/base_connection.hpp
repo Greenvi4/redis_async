@@ -18,7 +18,7 @@
 namespace redis_async {
     namespace details {
 
-        auto logger = log4cxx::Logger::getLogger("redis_async.connection");
+        extern log4cxx::LoggerPtr logger;
 
         class basic_connection;
         using basic_connection_ptr = std::shared_ptr<basic_connection>;

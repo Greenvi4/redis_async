@@ -16,7 +16,7 @@ namespace redis_async {
             : service_(std::make_shared<asio_config::io_service>())
             , pool_size_(pool_size)
             , state_(running) {
-            LOG4CXX_TRACE(logger, "Initializing redis db service");
+            LOG4CXX_TRACE(logger, "Initializing rd_service db service");
         }
 
         redis_impl::~redis_impl() {

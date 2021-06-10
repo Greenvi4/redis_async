@@ -6,10 +6,10 @@
 #define REDIS_ASYNC_REDIS_IMPL_HPP
 
 #include <redis_async/common.hpp>
+#include <redis_async/asio_config.hpp>
 
 #include <boost/noncopyable.hpp>
 #include <map>
-#include <redis_async/asio_config.hpp>
 
 namespace redis_async {
     namespace details {

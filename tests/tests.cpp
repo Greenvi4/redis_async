@@ -9,9 +9,3 @@ int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
-
-TEST(resi_async, test) {
-    using redis_async::Redis;
-
-    Redis r;
-}
