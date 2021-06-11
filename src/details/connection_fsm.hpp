@@ -214,6 +214,13 @@ namespace redis_async {
                 });
             }
 
+            void send_startup_message() {
+                if (conn_opts_.password.empty()) {
+                    fsm().process_event(events::ready_for_query{});
+                    return;
+                }
+            }
+
             void close_transport() {
                 transport_.close();
             }
