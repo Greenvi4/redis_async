@@ -30,7 +30,7 @@ namespace redis_async {
                                                       const connection_callbacks &callbacks) {
             if (opts.schema == "tcp")
                 return create_connection<tcp_transport>(svc, opts, callbacks);
-            if (opts.schema == "socket")
+            if (opts.schema == "unix")
                 return create_connection<socket_transport>(svc, opts, callbacks);
 
             std::stringstream os;
