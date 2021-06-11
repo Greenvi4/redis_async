@@ -19,7 +19,7 @@ struct tmp_file_holder_t {
 
     tmp_file_holder_t()
         : filename{0}
-        , m_fd(mkstemp(templ)) {
+        , m_fd(mkstemp(temp)) {
         assert(m_fd > 0);
         std::string path = "/proc/self/fd/" + std::to_string(m_fd);
         auto res = readlink(path.c_str(), filename, sizeof(filename));
@@ -28,10 +28,11 @@ struct tmp_file_holder_t {
 
     ~tmp_file_holder_t() {
         close(m_fd);
+        std::remove(filename);
     }
 
 private:
-    char templ[PATH_MAX] = "redis.XXXXXX";
+    char temp[PATH_MAX] = "/tmp/redis.XXXXXX";
     int m_fd;
 };
 
@@ -39,9 +40,11 @@ TEST(ConnectionTest, tcp) {
     uint16_t port = ep::get_random();
     auto port_str = boost::lexical_cast<std::string>(port);
     auto server = ts::make_server({"redis-server", "--port", port_str});
+    ep::wait_port(port);
 
     using redis_async::rd_service;
     rd_service::add_connection("tcp=tcp://localhost:" + port_str);
+//    rd_service::run();
 }
 
 TEST(ConnectionTest, uds) {
@@ -58,4 +61,5 @@ TEST(ConnectionTest, uds) {
 
     using redis_async::rd_service;
     rd_service::add_connection(std::string("uds=unix://") + redis_socket.filename);
+//    rd_service::run();
 }

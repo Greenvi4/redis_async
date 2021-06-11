@@ -48,7 +48,9 @@ namespace redis_async {
                 template <typename SourceState, typename TargetState>
                 void operator()(error::connection_error const &err, connection_fsm_type &fsm,
                                 SourceState &, TargetState &) {
-                    LOG4CXX_ERROR(logger, "connection::on_connection_error Error: " << err.what())
+                    LOG4CXX_ERROR(logger, "Conn#" << fsm.number()
+                                                  << ": connection::on_connection_error Error: "
+                                                  << err.what())
                     fsm.notify_error(err);
                 }
             };
@@ -56,7 +58,7 @@ namespace redis_async {
                 template <typename SourceState, typename TargetState>
                 void operator()(events::terminate const &, connection_fsm_type &fsm, SourceState &,
                                 TargetState &) {
-                    LOG4CXX_INFO(logger, "connection: disconnect")
+                    LOG4CXX_INFO(logger, "Conn#" << fsm.number() << ": connection: disconnect")
                     fsm.close_transport();
                 }
             };
@@ -70,18 +72,18 @@ namespace redis_async {
                     >;
                 // clang-format on
                 template <typename Event>
-                void on_entry(Event const &, connection_fsm_type &) {
-                    LOG4CXX_TRACE(logger, "state[unplugged]: entry")
+                void on_entry(Event const &, connection_fsm_type &fsm) {
+                    LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[unplugged]: entry")
                 }
                 template <typename Event>
-                void on_exit(Event const &, connection_fsm_type &) {
-                    LOG4CXX_TRACE(logger, "state[unplugged]: exit")
+                void on_exit(Event const &, connection_fsm_type &fsm) {
+                    LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[unplugged]: exit")
                 }
             };
             struct terminated : terminate_state {
                 template <typename Event>
                 void on_entry(Event const &, connection_fsm_type &fsm) {
-                    LOG4CXX_TRACE(logger, "state[terminated]: entry")
+                    LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[terminated]: entry")
                     fsm.notify_terminated();
                 }
             };
@@ -93,16 +95,18 @@ namespace redis_async {
                 >;
                 // clang-format on
                 void on_entry(connection_options const &opts, connection_fsm_type &fsm) {
-                    LOG4CXX_TRACE(logger, "state[connecting]: entry")
+                    LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[connecting]: entry")
                     fsm.connect_transport(opts);
                 }
                 void on_exit(events::complete const &, connection_fsm_type &fsm) {
-                    LOG4CXX_TRACE(logger, "state[connecting]: exit by complete")
+                    LOG4CXX_TRACE(logger, "Conn#" << fsm.number()
+                                                  << ": state[connecting]: exit by complete")
                     fsm.start_read();
                 }
                 template <typename Event>
-                void on_exit(Event const &, connection_fsm_type &) {
-                    LOG4CXX_TRACE(logger, "state[connecting]: exit by " << demangle<Event>())
+                void on_exit(Event const &, connection_fsm_type &fsm) {
+                    LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[connecting]: exit by "
+                                                  << demangle<Event>())
                 }
             };
             struct authn : state {
@@ -113,18 +117,20 @@ namespace redis_async {
                 >;
                 // clang-format on
                 template <typename Event>
-                void on_entry(Event const &, connection_fsm_type &) {
-                    LOG4CXX_TRACE(logger, "state[authn]: entry")
+                void on_entry(Event const &, connection_fsm_type &fsm) {
+                    LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[authn]: entry")
+                    fsm.send_startup_message();
                 }
                 template <typename Event>
-                void on_exit(Event const &, connection_fsm_type &) {
-                    LOG4CXX_TRACE(logger, "state[authn]: exit by " << demangle<Event>())
+                void on_exit(Event const &, connection_fsm_type &fsm) {
+                    LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[authn]: exit by "
+                                                  << demangle<Event>())
                 }
             };
             struct idle : state {
                 template <typename Event>
                 void on_entry(Event const &, connection_fsm_type &fsm) {
-                    LOG4CXX_TRACE(logger, "state[idle]: entry")
+                    LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[idle]: entry")
                     fsm.notify_idle();
                 }
             };
@@ -161,9 +167,9 @@ namespace redis_async {
             // clang-format on
             // Replaces the default no-transition response.
             template <class FSM, class Event>
-            void no_transition(Event const &e, FSM &, int state) {
-                LOG4CXX_ERROR(logger, "no transition from state " << state << " on event "
-                                                                  << demangle<Event>());
+            void no_transition(Event const &e, FSM &fsm, int state) {
+                LOG4CXX_ERROR(logger, "Conn#" << fsm.number() << ": no transition from state "
+                                              << state << " on event " << demangle<Event>());
                 BOOST_ASSERT(false);
             }
 
@@ -218,10 +224,11 @@ namespace redis_async {
                 try {
                     notifyIdleImpl();
                 } catch (::std::exception const &e) {
-                    LOG4CXX_WARN(logger, "Exception in on idle handler " << e.what())
+                    LOG4CXX_WARN(logger, "Conn#" << number() << ": Exception in on idle handler "
+                                                 << e.what())
                 } catch (...) {
                     // Ignore handler error
-                    LOG4CXX_WARN(logger, "Exception in on idle handler")
+                    LOG4CXX_WARN(logger, "Conn#" << number() << ": Exception in on idle handler")
                 }
             }
 
@@ -229,10 +236,11 @@ namespace redis_async {
                 try {
                     notifyTerminatedImpl();
                 } catch (::std::exception const &e) {
-                    LOG4CXX_WARN(logger, "Exception in terminated handler " << e.what())
+                    LOG4CXX_WARN(logger, "Conn#" << number() << ": Exception in terminated handler "
+                                                 << e.what())
                 } catch (...) {
                     // Ignore handler error
-                    LOG4CXX_WARN(logger, "Exception in terminated handler")
+                    LOG4CXX_WARN(logger, "Conn#" << number() << ": Exception in terminated handler")
                 }
             }
 
@@ -286,7 +294,7 @@ namespace redis_async {
                 if (!ec) {
                     // read message
                     std::istreambuf_iterator<char> in(&incoming_);
-//                    read_message(in, bytes_transferred);
+                    //  read_message(in, bytes_transferred);
                     // start async operation again
                     start_read();
                 } else {
@@ -328,7 +336,8 @@ namespace redis_async {
                 if (callbacks_.idle) {
                     callbacks_.idle(fsm_type::shared_from_this());
                 } else {
-                    LOG4CXX_WARN(logger, "No connection idle callback")
+                    LOG4CXX_WARN(logger,
+                                 "Conn#" << fsm_type::number() << ": No connection idle callback")
                 }
             }
 
@@ -336,17 +345,20 @@ namespace redis_async {
                 if (callbacks_.terminated) {
                     callbacks_.terminated(fsm_type::shared_from_this());
                 } else {
-                    LOG4CXX_INFO(logger, "No connection terminated callback")
+                    LOG4CXX_INFO(logger, "Conn#" << fsm_type::number()
+                                                 << ": No connection terminated callback")
                 }
                 callbacks_ = connection_callbacks(); // clean up callbacks, no work further.
             }
 
             void notifyErrorImpl(error::connection_error const &e) override {
-                LOG4CXX_ERROR(logger, "Connection error " << e.what())
+                LOG4CXX_ERROR(logger,
+                              "Conn#" << fsm_type::number() << ": Connection error " << e.what())
                 if (callbacks_.error) {
                     callbacks_.error(connection_ptr(), e);
                 } else {
-                    LOG4CXX_ERROR(logger, "No connection_error callback")
+                    LOG4CXX_ERROR(logger,
+                                  "Conn#" << fsm_type::number() << ": No connection_error callback")
                 }
             }
 
