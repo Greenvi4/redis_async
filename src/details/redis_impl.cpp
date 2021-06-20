@@ -6,8 +6,8 @@
 
 #include <utility>
 
-#include "base_connection.hpp"
-#include "connection_pool.hpp"
+#include "connection/base_connection.hpp"
+#include "connection/connection_pool.hpp"
 
 namespace redis_async {
     namespace details {
