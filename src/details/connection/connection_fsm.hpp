@@ -15,8 +15,9 @@
 #include <redis_async/common.hpp>
 #include <redis_async/error.hpp>
 
-#include "base_connection.hpp"
-#include "events.hpp"
+#include <details/connection/base_connection.hpp>
+#include <details/connection/events.hpp>
+#include <details/protocol/message.hpp>
 
 namespace redis_async {
     namespace details {
@@ -140,6 +141,20 @@ namespace redis_async {
                     events::terminate
                 >;
                 // clang-format on
+                void on_entry(const events::execute &evt, connection_fsm_type &fsm) {
+                    LOG4CXX_TRACE(logger,
+                                  "Conn#" << fsm.number() << ": state[query]: entry by execute")
+                    fsm.send({evt.cmd});
+                }
+                template <typename Event>
+                void on_entry(Event const &, connection_fsm_type &fsm) {
+                    LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[query]: entry")
+                }
+                template <typename Event>
+                void on_exit(Event const &, connection_fsm_type &fsm) {
+                    LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[query]: exit by "
+                                                  << demangle<Event>())
+                }
             };
 
             using initial_state = unplugged;
@@ -176,6 +191,8 @@ namespace redis_async {
             //@{
             using io_service_ptr = asio_config::io_service_ptr;
             using shared_base = std::enable_shared_from_this<shared_type>;
+            using asio_io_handler =
+                std::function<void(asio_config::error_code const &error, size_t bytes_transferred)>;
             //@}
 
             //@{
@@ -218,6 +235,25 @@ namespace redis_async {
                 if (conn_opts_.password.empty()) {
                     fsm().process_event(events::ready_for_query{});
                     return;
+                }
+            }
+
+            void send(message &&m, asio_io_handler handler = asio_io_handler()) {
+                if (transport_.connected()) {
+                    auto msg = ::std::make_shared<message>(::std::move(m));
+                    auto data_range = msg->buffer();
+                    auto _this = shared_base::shared_from_this();
+                    auto write_handler = [_this, handler, msg](asio_config::error_code const &ec,
+                                                               size_t sz) {
+                        if (handler)
+                            handler(ec, sz);
+                        else
+                            _this->handle_write(ec, sz);
+                    };
+                    transport_.async_write(
+                        boost::asio::buffer(&*data_range.first,
+                                            data_range.second - data_range.first),
+                        write_handler);
                 }
             }
 
@@ -301,13 +337,23 @@ namespace redis_async {
                 if (!ec) {
                     // read message
                     std::istreambuf_iterator<char> in(&incoming_);
-                    //  read_message(in, bytes_transferred);
+                    read_message(in, bytes_transferred);
                     // start async operation again
                     start_read();
                 } else {
                     // Socket error - force termination
                     fsm().process_event(error::connection_error(ec.message()));
                 }
+            }
+
+            void handle_write(asio_config::error_code const &ec, size_t) {
+                if (ec) {
+                    // Socket error - force termination
+                    fsm().process_event(error::connection_error(ec.message()));
+                }
+            }
+
+            void read_message(std::istreambuf_iterator<char> in, size_t max_bytes) {
             }
 
         private:

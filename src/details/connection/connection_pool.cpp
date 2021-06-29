@@ -2,9 +2,9 @@
 // Created by niko on 10.06.2021.
 //
 
-#include "connection_pool.hpp"
-#include "base_connection.hpp"
-#include "events.hpp"
+#include <details/connection/connection_pool.hpp>
+#include <details/connection/base_connection.hpp>
+#include <details/connection/events.hpp>
 
 #include <mutex>
 #include <queue>
@@ -157,7 +157,7 @@ namespace redis_async {
                 erase_connection(c);
                 clear_queue(ec);
             }
-            void get_connection(const std::string &expression, query_result_callback const &conn_cb,
+            void get_connection(command_wrapper_t cmd, query_result_callback const &conn_cb,
                                 error_callback const &err, connection_pool_ptr pool) {
                 if (closed_) {
                     err(error::connection_error("Connection pool is closed"));
@@ -166,12 +166,12 @@ namespace redis_async {
                 connection_ptr conn;
                 if (get_idle_connection(conn)) {
                     LOG4CXX_INFO(logger, "Connection to " << alias() << " is idle")
-                    conn->execute({expression, conn_cb, err});
+                    conn->execute({std::move(cmd), conn_cb, err});
                 } else {
                     if (!closed_ && connections_.size() < pool_size_) {
                         create_new_connection(pool);
                     }
-                    enqueue_event({expression, conn_cb, err});
+                    enqueue_event({std::move(cmd), conn_cb, err});
                 }
             }
             void close(simple_callback close_cb) {
@@ -240,11 +240,11 @@ namespace redis_async {
             pimpl_->connection_error(std::move(c), ec);
         }
 
-        void connection_pool::get_connection(const std::string &expression,
+        void connection_pool::get_connection(command_wrapper_t cmd,
                                              query_result_callback const &conn_cb,
                                              error_callback const &err) {
             auto _this = shared_from_this();
-            pimpl_->get_connection(expression, conn_cb, err, _this);
+            pimpl_->get_connection(std::move(cmd), conn_cb, err, _this);
         }
 
         void connection_pool::close(simple_callback close_cb) {

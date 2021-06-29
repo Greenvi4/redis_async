@@ -6,8 +6,8 @@
 
 #include <utility>
 
-#include "connection/base_connection.hpp"
-#include "connection/connection_pool.hpp"
+#include <details/connection/base_connection.hpp>
+#include <details/connection/connection_pool.hpp>
 
 namespace redis_async {
     namespace details {
@@ -49,7 +49,7 @@ namespace redis_async {
             add_pool(options, std::move(pool_size));
         }
 
-        void redis_impl::get_connection(rdalias const &alias, const std::string &expression,
+        void redis_impl::get_connection(rdalias const &alias, command_wrapper_t cmd,
                                         const query_result_callback &conn_cb,
                                         const error_callback &err) {
             if (state_ != running)
@@ -59,7 +59,7 @@ namespace redis_async {
                 throw error::connection_error("Database alias '" + alias + "' is not registered");
             }
             connection_pool_ptr pool = connections_[alias];
-            pool->get_connection(expression, conn_cb, err);
+            pool->get_connection(std::move(cmd), conn_cb, err);
         }
 
         void redis_impl::run() {

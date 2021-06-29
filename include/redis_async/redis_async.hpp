@@ -8,6 +8,8 @@
 #include <redis_async/asio_config.hpp>
 #include <redis_async/common.hpp>
 
+#include <boost/utility/string_ref.hpp>
+
 namespace redis_async {
 
     namespace details {
@@ -68,6 +70,14 @@ namespace redis_async {
          */
         static void execute(rdalias const &alias, const std::string &expression,
                             query_result_callback const &result, error_callback const &error);
+
+        static void ping(const rdalias &alias, const query_result_callback &result,
+                         const error_callback &error);
+        static void ping(const rdalias &alias, boost::string_ref msg,
+                         const query_result_callback &result, const error_callback &error);
+        static void echo(const rdalias &alias, boost::string_ref msg,
+                         const query_result_callback &result, const error_callback &error);
+
 
     private:
         // No instances

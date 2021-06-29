@@ -7,13 +7,15 @@
 
 #include <redis_async/common.hpp>
 
+#include <details/protocol/command.hpp>
+
 namespace redis_async {
     namespace details {
 
         namespace events {
 
             struct execute {
-                std::string expression;
+                command_wrapper_t cmd;
                 query_result_callback result;
                 error_callback error;
             };

@@ -11,6 +11,8 @@
 #include <boost/noncopyable.hpp>
 #include <map>
 
+#include <details/protocol/command.hpp>
+
 namespace redis_async {
     namespace details {
 
@@ -29,7 +31,7 @@ namespace redis_async {
                                 optional_size pool_size = optional_size());
             void add_connection(const connection_options &options,
                                 optional_size pool_size = optional_size());
-            void get_connection(rdalias const &alias, const std::string &expression,
+            void get_connection(rdalias const &alias, command_wrapper_t cmd,
                                 const query_result_callback &conn_cb, const error_callback &err);
 
             void run();

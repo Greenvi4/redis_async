@@ -27,10 +27,16 @@ add_library(${PROJECT_NAME}
         details/connection/connection_pool.cpp
         details/connection/connection_pool.hpp
         details/redis_impl.cpp
-        details/redis_impl.hpp)
+        details/redis_impl.hpp
+        details/protocol/command.hpp
+        details/protocol/message.hpp
+        details/protocol/message.cpp
+        )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_SYSTEM_LIBRARIES} log4cxx)
-target_include_directories(${PROJECT_NAME} PUBLIC ../include)
+target_include_directories(${PROJECT_NAME}
+        PUBLIC ../include
+        PRIVATE .)
 
 install_target_headers()
 install_target_lib()

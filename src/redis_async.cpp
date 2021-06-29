@@ -2,8 +2,8 @@
 // Created by niko on 23.05.2021.
 //
 
-#include "details/connection/base_connection.hpp"
-#include "details/redis_impl.hpp"
+#include <details/connection/base_connection.hpp>
+#include <details/redis_impl.hpp>
 #include <redis_async/redis_async.hpp>
 
 #include <mutex>
@@ -57,6 +57,26 @@ namespace redis_async {
 
     asio_config::io_service_ptr rd_service::io_service() {
         return impl()->io_service();
+    }
+
+    void rd_service::ping(const rdalias &alias, const query_result_callback &result,
+                          const error_callback &error) {
+        // TODO Wrap callbacks in strands
+        impl()->get_connection(alias, "PING", result, error);
+    }
+
+    void rd_service::ping(const rdalias &alias, boost::string_ref msg,
+                          const query_result_callback &result, const error_callback &error) {
+        // TODO Wrap callbacks in strands
+        using details::single_command_t;
+        impl()->get_connection(alias, single_command_t{"PING", msg}, result, error);
+    }
+
+    void rd_service::echo(const rdalias &alias, boost::string_ref msg,
+                          const query_result_callback &result, const error_callback &error) {
+        // TODO Wrap callbacks in strands
+        using details::single_command_t;
+        impl()->get_connection(alias, single_command_t{"ECHO", msg}, result, error);
     }
 
     void rd_service::execute(rdalias const &alias, const std::string &expression,

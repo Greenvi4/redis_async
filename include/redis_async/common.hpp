@@ -8,6 +8,7 @@
 #include <redis_async/error.hpp>
 
 #include <boost/optional.hpp>
+#include <boost/utility/string_view.hpp>
 #include <chrono>
 #include <cxxabi.h>
 #include <functional>
@@ -45,7 +46,7 @@ namespace redis_async {
     /** @brief Callback for error handling */
     using error_callback = std::function<void(error::rd_error const &)>;
     /** @brief Callback for query results */
-    using query_result_callback = std::function<void(resultset, bool)>;
+    using query_result_callback = std::function<void(resultset)>;
     /** @brief Callback for a query error */
     using query_error_callback = std::function<void(error::query_error const &)>;
 
