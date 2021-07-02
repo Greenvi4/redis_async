@@ -2,8 +2,7 @@
 // Created by niko on 26.05.2021.
 //
 
-#include <details/connection/transport.hpp>
-
+#include <redis_async/details/connection/transport.hpp>
 #include <redis_async/error.hpp>
 
 #include <boost/asio/connect.hpp>

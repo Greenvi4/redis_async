@@ -7,11 +7,10 @@
 
 #include <redis_async/common.hpp>
 #include <redis_async/asio_config.hpp>
+#include <redis_async/details/protocol/command.hpp>
 
 #include <boost/noncopyable.hpp>
 #include <map>
-
-#include <details/protocol/command.hpp>
 
 namespace redis_async {
     namespace details {

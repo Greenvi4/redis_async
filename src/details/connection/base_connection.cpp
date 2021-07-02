@@ -2,8 +2,8 @@
 // Created by niko on 09.06.2021.
 //
 
-#include "connection_fsm.hpp"
-#include "transport.hpp"
+#include <redis_async/details/connection/connection_fsm.hpp>
+#include <redis_async/details/connection/transport.hpp>
 
 namespace redis_async {
     namespace details {

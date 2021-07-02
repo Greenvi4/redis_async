@@ -2,8 +2,8 @@
 // Created by niko on 23.05.2021.
 //
 
-#include <details/connection/base_connection.hpp>
-#include <details/redis_impl.hpp>
+#include <redis_async/details/connection/base_connection.hpp>
+#include <redis_async/details/redis_impl.hpp>
 #include <redis_async/redis_async.hpp>
 
 #include <mutex>

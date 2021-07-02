@@ -6,8 +6,8 @@
 #define REDIS_ASYNC_EVENTS_HPP
 
 #include <redis_async/common.hpp>
-
-#include <details/protocol/command.hpp>
+#include <redis_async/rd_types.hpp>
+#include <redis_async/details/protocol/command.hpp>
 
 namespace redis_async {
     namespace details {
@@ -19,9 +19,11 @@ namespace redis_async {
                 query_result_callback result;
                 error_callback error;
             };
+            struct recv {
+                result_t res;
+            };
             struct terminate {};
             struct complete {};
-            struct ready_for_query {};
 
         } // namespace events
 

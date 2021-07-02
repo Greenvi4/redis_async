@@ -6,6 +6,7 @@
 #define REDIS_ASYNC_COMMON_HPP
 
 #include <redis_async/error.hpp>
+#include <redis_async/rd_types.hpp>
 
 #include <boost/optional.hpp>
 #include <boost/utility/string_view.hpp>
@@ -40,13 +41,12 @@ namespace redis_async {
     } // namespace details
     using connection_ptr = std::shared_ptr<details::basic_connection>;
     using optional_size = boost::optional<size_t>;
-    using resultset = std::string;
 
     using simple_callback = std::function<void()>;
     /** @brief Callback for error handling */
     using error_callback = std::function<void(error::rd_error const &)>;
     /** @brief Callback for query results */
-    using query_result_callback = std::function<void(resultset)>;
+    using query_result_callback = std::function<void(result_t)>;
     /** @brief Callback for a query error */
     using query_error_callback = std::function<void(error::query_error const &)>;
 

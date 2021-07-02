@@ -8,7 +8,7 @@
 #include <boost/noncopyable.hpp>
 #include <vector>
 
-#include <details/protocol/command.hpp>
+#include <redis_async/details/protocol/command.hpp>
 
 namespace redis_async {
     namespace details {

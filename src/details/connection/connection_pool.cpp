@@ -2,9 +2,9 @@
 // Created by niko on 10.06.2021.
 //
 
-#include <details/connection/connection_pool.hpp>
-#include <details/connection/base_connection.hpp>
-#include <details/connection/events.hpp>
+#include <redis_async/details/connection/base_connection.hpp>
+#include <redis_async/details/connection/connection_pool.hpp>
+#include <redis_async/details/connection/events.hpp>
 
 #include <mutex>
 #include <queue>
@@ -196,7 +196,8 @@ namespace redis_async {
                     for (auto &c : copy) {
                         c->terminate();
                     }
-                } else if (closed_callback_) {
+                }
+                if (closed_callback_) {
                     closed_callback_();
                 }
             }

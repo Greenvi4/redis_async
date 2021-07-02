@@ -25,6 +25,15 @@ namespace redis_async {
         query_error::query_error(const char *msg)
             : rd_error(msg) {
         }
+        client_error::client_error(const std::string &msg)
+            : rd_error(msg) {
+        }
+        client_error::client_error(const char *msg)
+            : rd_error(msg) {
+        }
+        client_error::client_error(const std::exception &e)
+            : rd_error(std::string("Client thrown exception: ") + e.what()) {
+        }
 
     } // namespace error
 } // namespace redis_async

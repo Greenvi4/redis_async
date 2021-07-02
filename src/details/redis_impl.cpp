@@ -2,12 +2,11 @@
 // Created by niko on 10.06.2021.
 //
 
-#include "redis_impl.hpp"
+#include <redis_async/details/redis_impl.hpp>
+#include <redis_async/details/connection/base_connection.hpp>
+#include <redis_async/details/connection/connection_pool.hpp>
 
 #include <utility>
-
-#include <details/connection/base_connection.hpp>
-#include <details/connection/connection_pool.hpp>
 
 namespace redis_async {
     namespace details {

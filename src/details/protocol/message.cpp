@@ -2,7 +2,7 @@
 // Created by niko on 29.06.2021.
 //
 
-#include <details/protocol/message.hpp>
+#include <redis_async/details/protocol/message.hpp>
 #include <boost/asio/buffer.hpp>
 
 namespace redis_async {

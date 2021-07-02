@@ -38,6 +38,18 @@ namespace redis_async {
             explicit query_error(const char *msg);
         };
 
+        /**
+         * @brief An exception was caught in a callback.
+         * @see @ref errors
+         * @see @ref callbacks
+         */
+        class client_error : public rd_error {
+        public:
+            explicit client_error(const std::string &msg);
+            explicit client_error(const char *msg);
+            explicit client_error(const std::exception &e);
+        };
+
     } // namespace error
 } // namespace redis_async
 

@@ -14,10 +14,9 @@
 #include <redis_async/asio_config.hpp>
 #include <redis_async/common.hpp>
 #include <redis_async/error.hpp>
-
-#include <details/connection/base_connection.hpp>
-#include <details/connection/events.hpp>
-#include <details/protocol/message.hpp>
+#include <redis_async/details/connection/base_connection.hpp>
+#include <redis_async/details/connection/events.hpp>
+#include <redis_async/details/protocol/message.hpp>
 
 namespace redis_async {
     namespace details {
@@ -55,6 +54,7 @@ namespace redis_async {
                     fsm.notify_error(err);
                 }
             };
+
             struct disconnect {
                 template <typename SourceState, typename TargetState>
                 void operator()(events::terminate const &, connection_fsm_type &fsm, SourceState &,
@@ -72,15 +72,18 @@ namespace redis_async {
                     events::execute
                     >;
                 // clang-format on
+
                 template <typename Event>
                 void on_entry(Event const &, connection_fsm_type &fsm) {
                     LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[unplugged]: entry")
                 }
+
                 template <typename Event>
                 void on_exit(Event const &, connection_fsm_type &fsm) {
                     LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[unplugged]: exit")
                 }
             };
+
             struct terminated : terminate_state {
                 template <typename Event>
                 void on_entry(Event const &, connection_fsm_type &fsm) {
@@ -88,6 +91,7 @@ namespace redis_async {
                     fsm.notify_terminated();
                 }
             };
+
             struct connecting : state {
                 // clang-format off
                 using deferred_events = mpl::vector<
@@ -95,21 +99,25 @@ namespace redis_async {
                     events::execute
                 >;
                 // clang-format on
+
                 void on_entry(connection_options const &opts, connection_fsm_type &fsm) {
                     LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[connecting]: entry")
                     fsm.connect_transport(opts);
                 }
+
                 void on_exit(events::complete const &, connection_fsm_type &fsm) {
                     LOG4CXX_TRACE(logger, "Conn#" << fsm.number()
                                                   << ": state[connecting]: exit by complete")
                     fsm.start_read();
                 }
+
                 template <typename Event>
                 void on_exit(Event const &, connection_fsm_type &fsm) {
                     LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[connecting]: exit by "
                                                   << demangle<Event>())
                 }
             };
+
             struct authn : state {
                 // clang-format off
                 using deferred_events = mpl::vector<
@@ -117,17 +125,26 @@ namespace redis_async {
                     events::execute
                 >;
                 // clang-format on
+
                 template <typename Event>
                 void on_entry(Event const &, connection_fsm_type &fsm) {
                     LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[authn]: entry")
                     fsm.send_startup_message();
                 }
+
+                void on_exit(const events::recv &evt, connection_fsm_type &fsm) {
+                    LOG4CXX_TRACE(logger,
+                                  "Conn#" << fsm.number() << ": state[authn]: exit by recv");
+                    //! @todo check answer
+                }
+
                 template <typename Event>
                 void on_exit(Event const &, connection_fsm_type &fsm) {
                     LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[authn]: exit by "
-                                                  << demangle<Event>())
+                                                  << demangle<Event>());
                 }
             };
+
             struct idle : state {
                 template <typename Event>
                 void on_entry(Event const &, connection_fsm_type &fsm) {
@@ -135,25 +152,48 @@ namespace redis_async {
                     fsm.notify_idle();
                 }
             };
+
             struct query : state {
                 // clang-format off
                 using deferred_events = mpl::vector<
                     events::terminate
                 >;
                 // clang-format on
+
+                events::execute query_;
+
                 void on_entry(const events::execute &evt, connection_fsm_type &fsm) {
                     LOG4CXX_TRACE(logger,
                                   "Conn#" << fsm.number() << ": state[query]: entry by execute")
-                    fsm.send({evt.cmd});
+                    query_ = evt;
+                    fsm.send({query_.cmd});
                 }
+
                 template <typename Event>
                 void on_entry(Event const &, connection_fsm_type &fsm) {
                     LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[query]: entry")
+                    query_ = events::execute{};
                 }
+
+                void on_exit(const error::query_error &err, connection_fsm_type &fsm) {
+                    LOG4CXX_TRACE(logger,
+                                  "Conn#" << fsm.number() << ": state[query]: exit by query_error");
+                    fsm.notify_error(*this, err);
+                    query_ = events::execute{};
+                }
+
+                void on_exit(const events::recv &evt, connection_fsm_type &fsm) {
+                    LOG4CXX_TRACE(logger,
+                                  "Conn#" << fsm.number() << ": state[query]: exit by recv");
+                    fsm.notify_result(*this, evt.res);
+                    query_ = events::execute{};
+                }
+
                 template <typename Event>
                 void on_exit(Event const &, connection_fsm_type &fsm) {
                     LOG4CXX_TRACE(logger, "Conn#" << fsm.number() << ": state[query]: exit by "
                                                   << demangle<Event>())
+                    query_ = events::execute{};
                 }
             };
 
@@ -169,17 +209,20 @@ namespace redis_async {
                 tr<connecting,  events::complete,           authn,      none>,
                 tr<connecting,  error::connection_error,    terminated, on_connection_error>,
 
-                tr<authn,       events::ready_for_query,    idle,       none>,
+                tr<authn,       events::complete,           idle,       none>,
+                tr<authn,       events::recv,               idle,       none>,
                 tr<authn,       error::connection_error,    terminated, on_connection_error>,
 
                 tr<idle,        events::execute,            query,      none>,
                 tr<idle,        events::terminate,          terminated, disconnect>,
                 tr<idle,        error::connection_error,    terminated, on_connection_error>,
 
-                tr<query,       events::ready_for_query,    idle,       none>,
+                tr<query,       events::recv,               idle,       none>,
+                tr<query,       error::query_error,         idle,       none>,
                 tr<query,       error::connection_error,    terminated, on_connection_error>
             >;
             // clang-format on
+
             // Replaces the default no-transition response.
             template <class FSM, class Event>
             void no_transition(Event const &e, FSM &fsm, int state) {
@@ -204,6 +247,7 @@ namespace redis_async {
                 , connection_number_{next_connection_number()} {
                 incoming_.prepare(8192); // FIXME Magic number, move to configuration
             }
+
             virtual ~connection_fsm_def() = default;
             //@}
 
@@ -233,9 +277,11 @@ namespace redis_async {
 
             void send_startup_message() {
                 if (conn_opts_.password.empty()) {
-                    fsm().process_event(events::ready_for_query{});
+                    fsm().process_event(events::complete{});
                     return;
                 }
+                single_command_t cmd{"AUTH", conn_opts_.password};
+                send({cmd});
             }
 
             void send(message &&m, asio_io_handler handler = asio_io_handler()) {
@@ -263,6 +309,45 @@ namespace redis_async {
 
             //@{
             /** @connection events notifications */
+            template <typename Source>
+            void notify_result(Source &state, result_t res) {
+                if (state.query_.result) {
+                    auto result_cb = state.query_.result;
+                    auto error_cb = state.query_.error;
+                    auto conn = fsm().shared_from_this();
+                    fsm().async_notify([conn, result_cb, error_cb, res]() {
+                        LOG4CXX_TRACE(logger, "Conn#" << conn->number() << ": In async notify");
+                        try {
+                            result_cb(res);
+                        } catch (error::query_error const &e) {
+                            LOG4CXX_TRACE(
+                                logger, "Conn#" << conn->number()
+                                                << ": Query result handler throwed a query_error: "
+                                                << e.what());
+                            error_cb(e);
+                        } catch (error::rd_error const &e) {
+                            LOG4CXX_TRACE(logger,
+                                          "Conn#" << conn->number()
+                                                  << ": Query result handler throwed a db_error: "
+                                                  << e.what());
+                            error_cb(e);
+                        } catch (std::exception const &e) {
+                            LOG4CXX_TRACE(logger,
+                                          "Conn#" << conn->number()
+                                                  << ": Query result handler throwed an exception: "
+                                                  << e.what());
+                            error_cb(error::client_error(e));
+                        } catch (...) {
+                            LOG4CXX_TRACE(
+                                logger,
+                                "Conn#" << conn->number()
+                                        << ": Query result handler throwed an unknown exception");
+                            error_cb(error::client_error("Unknown exception"));
+                        }
+                    });
+                }
+            }
+
             void notify_idle() {
                 try {
                     notifyIdleImpl();
@@ -284,6 +369,22 @@ namespace redis_async {
                 } catch (...) {
                     // Ignore handler error
                     LOG4CXX_WARN(logger, "Conn#" << number() << ": Exception in terminated handler")
+                }
+            }
+
+            template <typename State>
+            void notify_error(State &state, error::query_error const &qe) {
+                if (state.query_.error) {
+                    try {
+                        state.query_.error(qe);
+                    } catch (std::exception const &e) {
+                        LOG4CXX_WARN(logger,
+                                     "Query error handler throwed an exception: " << e.what());
+                    } catch (...) {
+                        LOG4CXX_WARN(logger, "Query error handler throwed an unexpected exception");
+                    }
+                } else {
+                    LOG4CXX_WARN(logger, "No query error handler");
                 }
             }
 
@@ -336,8 +437,7 @@ namespace redis_async {
             void handle_read(asio_config::error_code const &ec, size_t bytes_transferred) {
                 if (!ec) {
                     // read message
-                    std::istreambuf_iterator<char> in(&incoming_);
-                    read_message(in, bytes_transferred);
+                    read_message(bytes_transferred);
                     // start async operation again
                     start_read();
                 } else {
@@ -353,7 +453,8 @@ namespace redis_async {
                 }
             }
 
-            void read_message(std::istreambuf_iterator<char> in, size_t max_bytes) {
+            void read_message(size_t max_bytes) {
+                fsm().process_event(events::recv{});
             }
 
         private:

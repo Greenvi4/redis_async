@@ -10,8 +10,7 @@
 
 #include <redis_async/asio_config.hpp>
 #include <redis_async/common.hpp>
-
-#include <details/protocol/command.hpp>
+#include <redis_async/details/protocol/command.hpp>
 
 namespace redis_async {
     namespace details {

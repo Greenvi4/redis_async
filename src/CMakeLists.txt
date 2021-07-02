@@ -11,6 +11,15 @@ set(HEADERS
         ../include/redis_async/error.hpp
         ../include/redis_async/asio_config.hpp
         ../include/redis_async/future_config.hpp
+        ../include/redis_async/rd_types.hpp
+        ../include/redis_async/details/connection/base_connection.hpp
+        ../include/redis_async/details/connection/events.hpp
+        ../include/redis_async/details/connection/connection_fsm.hpp
+        ../include/redis_async/details/connection/transport.hpp
+        ../include/redis_async/details/connection/connection_pool.hpp
+        ../include/redis_async/details/redis_impl.hpp
+        ../include/redis_async/details/protocol/command.hpp
+        ../include/redis_async/details/protocol/message.hpp
         )
 
 add_library(${PROJECT_NAME}
@@ -18,25 +27,17 @@ add_library(${PROJECT_NAME}
         redis_async.cpp
         common.cpp
         error.cpp
-        details/connection/base_connection.hpp
-        details/connection/base_connection.cpp
-        details/connection/events.hpp
-        details/connection/connection_fsm.hpp
-        details/connection/transport.hpp
         details/connection/transport.cpp
         details/connection/connection_pool.cpp
-        details/connection/connection_pool.hpp
+        details/connection/base_connection.cpp
         details/redis_impl.cpp
-        details/redis_impl.hpp
-        details/protocol/command.hpp
-        details/protocol/message.hpp
         details/protocol/message.cpp
         )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_SYSTEM_LIBRARIES} log4cxx)
 target_include_directories(${PROJECT_NAME}
         PUBLIC ../include
-        PRIVATE .)
+        )
 
 install_target_headers()
 install_target_lib()

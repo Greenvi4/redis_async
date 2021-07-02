@@ -20,30 +20,49 @@ TEST(CommandsTest, ping) {
     ep::wait_port(port);
 
     using redis_async::rd_service;
-    rd_service::add_connection("tcp=tcp://localhost:" + port_str);
+    rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
 
-    using redis_async::resultset;
+    boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
+    timer.async_wait([&](const boost::system::error_code &ec) {
+        if (ec)
+            return;
+        rd_service::stop();
+        FAIL() << "Test timer expired";
+    });
+
+    using redis_async::result_t;
 
     rd_service::ping(
-        "tcp"_rd, [](const resultset &res) { ASSERT_EQ(res, "PONG"); },
-        [](const redis_async::error::rd_error &) { FAIL(); });
+        "tcp"_rd,
+        [](const result_t &res) { EXPECT_EQ("PONG", boost::get<redis_async::string_t>(res).str); },
+        [&](const redis_async::error::rd_error &) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL();
+        });
 
     const std::string msg = "Hello, World!";
     rd_service::ping(
         "tcp"_rd, msg,
-        [msg](const resultset &res) {
-            EXPECT_EQ(msg, res);
+        [msg](const result_t &res) { EXPECT_EQ(msg, boost::get<redis_async::string_t>(res).str); },
+        [&](const redis_async::error::rd_error &) {
+            timer.cancel();
             rd_service::stop();
-        },
-        [](const redis_async::error::rd_error &) { FAIL(); });
+            FAIL();
+        });
 
     rd_service::echo(
         "tcp"_rd, msg,
-        [msg](const resultset &res) {
-          EXPECT_EQ(msg, res);
-          rd_service::stop();
+        [&](const result_t &res) {
+            EXPECT_EQ(msg, boost::get<redis_async::string_t>(res).str);
+            timer.cancel();
+            rd_service::stop();
         },
-        [](const redis_async::error::rd_error &) { FAIL(); });
+        [&](const redis_async::error::rd_error &) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL();
+        });
 
     rd_service::run();
 }
