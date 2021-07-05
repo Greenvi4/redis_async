@@ -26,6 +26,32 @@ namespace redis_async {
         namespace msm = boost::msm;
         namespace mpl = boost::mpl;
 
+        template <typename FSM>
+        struct handler_parse_result_t : public boost::static_visitor<std::size_t> {
+
+            explicit handler_parse_result_t(FSM &fsm)
+                : m_fsm(fsm) {
+            }
+
+            std::size_t operator()(protocol_error_t &err) const {
+                m_fsm.process_event(error::query_error{err.code.message()});
+                return 0;
+            }
+
+            std::size_t operator()(error_t &err) const {
+                m_fsm.process_event(error::query_error{err.str});
+                return err.consumed;
+            }
+
+            std::size_t operator()(positive_parse_result_t &res) const {
+                m_fsm.process_event(events::recv{std::move(res.result)});
+                return res.consumed;
+            }
+
+        private:
+            FSM &m_fsm;
+        };
+
         template <typename TransportType, typename SharedType>
         struct connection_fsm_def
             : public msm::front::state_machine_def<connection_fsm_def<TransportType, SharedType>>,
@@ -460,36 +486,15 @@ namespace redis_async {
 
             void read_message(size_t max_bytes) {
                 while (max_bytes) {
+                    using handler_t = handler_parse_result_t<connection_fsm_type>;
                     auto data = incoming_.data();
                     auto parsed_result =
                         redis_async::details::raw_parse(iterator::begin(data), iterator::end(data));
-                    {
-                        auto *answer = boost::get<positive_parse_result_t>(&parsed_result);
-                        if (answer) {
-                            incoming_.consume(answer->consumed);
-                            fsm().process_event(events::recv{std::move(answer->result)});
-                            max_bytes -= answer->consumed;
-                            continue;
-                        }
-                    }
-                    {
-                        auto *answer = boost::get<error_t >(&parsed_result);
-                        if (answer) {
-                            incoming_.consume(answer->consumed);
-                            fsm().process_event(error::query_error{std::move(answer->str)});
-                            max_bytes -= answer->consumed;
-                            continue;
-                        }
-                    }
-                    {
-                        auto *answer = boost::get<protocol_error_t>(&parsed_result);
-                        if (answer) {
-                            incoming_.consume(max_bytes);
-                            fsm().process_event(error::query_error{answer->code.message()});
-                            max_bytes = 0;
-                            continue;
-                        }
-                    }
+                    auto consumed = boost::apply_visitor(handler_t{fsm()}, parsed_result);
+                    if(!consumed)
+                        consumed = max_bytes;
+                    incoming_.consume(consumed);
+                    max_bytes -= consumed;
                 }
             }
 
