@@ -13,7 +13,6 @@
 namespace ts = test_server;
 namespace ep = empty_port;
 
-
 TEST(CommandsTest, ping) {
     uint16_t port = ep::get_random();
     auto port_str = boost::lexical_cast<std::string>(port);
@@ -35,34 +34,34 @@ TEST(CommandsTest, ping) {
 
     rd_service::ping(
         "tcp"_rd,
-        [](const result_t &res) { EXPECT_EQ("PONG", boost::get<redis_async::string_t>(res).str); },
-        [&](const redis_async::error::rd_error &) {
+        [](const result_t &res) { EXPECT_EQ("PONG", boost::get<redis_async::string_t>(res)); },
+        [&](const redis_async::error::rd_error &err) {
             timer.cancel();
             rd_service::stop();
-            FAIL();
+            FAIL() << err.what();
         });
 
     const std::string msg = "Hello, World!";
     rd_service::ping(
         "tcp"_rd, msg,
-        [msg](const result_t &res) { EXPECT_EQ(msg, boost::get<redis_async::string_t>(res).str); },
-        [&](const redis_async::error::rd_error &) {
+        [msg](const result_t &res) { EXPECT_EQ(msg, boost::get<redis_async::string_t>(res)); },
+        [&](const redis_async::error::rd_error &err) {
             timer.cancel();
             rd_service::stop();
-            FAIL();
+            FAIL() << err.what();
         });
 
     rd_service::echo(
         "tcp"_rd, msg,
         [&](const result_t &res) {
-            EXPECT_EQ(msg, boost::get<redis_async::string_t>(res).str);
+            EXPECT_EQ(msg, boost::get<redis_async::string_t>(res));
             timer.cancel();
             rd_service::stop();
         },
-        [&](const redis_async::error::rd_error &) {
+        [&](const redis_async::error::rd_error &err) {
             timer.cancel();
             rd_service::stop();
-            FAIL();
+            FAIL() << err.what();
         });
 
     rd_service::run();

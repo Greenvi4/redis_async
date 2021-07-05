@@ -68,9 +68,6 @@ namespace redis_async {
          *    @throws tip::db::pg::error::connection_error if the alias is not
          *          registered with the database service.
          */
-        static void execute(rdalias const &alias, const std::string &expression,
-                            query_result_callback const &result, error_callback const &error);
-
         static void ping(const rdalias &alias, const query_result_callback &result,
                          const error_callback &error);
         static void ping(const rdalias &alias, boost::string_ref msg,

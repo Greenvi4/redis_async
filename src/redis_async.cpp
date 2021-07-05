@@ -79,12 +79,6 @@ namespace redis_async {
         impl()->get_connection(alias, single_command_t{"ECHO", msg}, result, error);
     }
 
-    void rd_service::execute(rdalias const &alias, const std::string &expression,
-                             query_result_callback const &result, error_callback const &error) {
-        // TODO Wrap callbacks in strands
-        impl()->get_connection(alias, expression, result, error);
-    }
-
     rd_service::pimpl &rd_service::impl_ptr() {
         static pimpl p;
         return p;

@@ -5,6 +5,7 @@
 #ifndef REDIS_ASYNC_PARSER_HPP
 #define REDIS_ASYNC_PARSER_HPP
 
+#include <redis_async/error.hpp>
 #include <redis_async/rd_types.hpp>
 
 #include <boost/lexical_cast.hpp>
@@ -15,10 +16,13 @@ namespace redis_async {
 
         static std::string terminator = "\r\n";
 
-        struct not_enough_data_t {};
-
         struct protocol_error_t {
             std::error_code code;
+        };
+
+        struct error_t {
+            string_t str;
+            size_t consumed;
         };
 
         struct positive_parse_result_t {
@@ -26,8 +30,7 @@ namespace redis_async {
             size_t consumed;
         };
 
-        using parse_result_t =
-            boost::variant<not_enough_data_t, protocol_error_t, positive_parse_result_t>;
+        using parse_result_t = boost::variant<protocol_error_t, error_t, positive_parse_result_t>;
 
         template <typename Iterator>
         parse_result_t raw_parse(const Iterator &from, const Iterator &to);
@@ -47,14 +50,13 @@ namespace redis_async {
 
             static auto markup_error(positive_parse_result_t &wrapped_string) -> parse_result_t {
                 auto &str = boost::get<string_t>(wrapped_string.result);
-                return parse_result_t{positive_parse_result_t{result_t{error_t{std::move(str.str)}},
-                                                              wrapped_string.consumed}};
+                return parse_result_t{error_t{std::move(str), wrapped_string.consumed}};
             }
 
             static auto markup_int(positive_parse_result_t &wrapped_string) -> parse_result_t {
                 auto &str = boost::get<string_t>(wrapped_string.result);
                 return parse_result_t{positive_parse_result_t{
-                    result_t{boost::lexical_cast<int_t>(str.str)}, wrapped_string.consumed}};
+                    result_t{boost::lexical_cast<int_t>(str)}, wrapped_string.consumed}};
             }
         };
 
@@ -66,7 +68,7 @@ namespace redis_async {
 
                 auto found_terminator = std::search(from, to, terminator.begin(), terminator.end());
                 if (found_terminator == to)
-                    return not_enough_data_t{};
+                    return protocol_error_t{error::make_error_code(error::errc::not_enough_data)};
                 size_t consumed =
                     terminator.size() + std::distance(from, found_terminator) + already_consumed;
                 return helper::markup_string(consumed, from, found_terminator);
@@ -122,18 +124,18 @@ namespace redis_async {
                 if (count == -1)
                     return helper::markup_nil(count_wrapped->consumed);
                 else if (count < -1)
-                    return protocol_error_t{std::make_error_code(std::errc::invalid_argument)};
+                    return protocol_error_t{error::make_error_code(error::errc::count_range)};
 
                 auto terminator_size = terminator.size();
                 if (left < count + terminator_size) {
-                    return not_enough_data_t{};
+                    return protocol_error_t{error::make_error_code(error::errc::not_enough_data)};
                 }
                 auto tail = head + count;
                 auto tail_end = tail + terminator_size;
                 bool found_terminator =
                     std::equal(tail, tail_end, terminator.begin(), terminator.end());
                 if (!found_terminator) {
-                    return protocol_error_t{std::make_error_code(std::errc::invalid_seek)};
+                    return protocol_error_t{error::make_error_code(error::errc::bulk_terminator)};
                 }
                 size_t consumed = count_wrapped->consumed + count + terminator_size;
                 return helper::markup_string(consumed, head, tail);
@@ -156,14 +158,14 @@ namespace redis_async {
                 if (count == -1)
                     return helper::markup_nil(count_wrapped->consumed);
                 else if (count < -1)
-                    return protocol_error_t{std::make_error_code(std::errc::invalid_argument)};
+                    return protocol_error_t{error::make_error_code(error::errc::count_range)};
 
                 array_holder_t array;
                 array.elements.reserve(count);
                 Iterator element_from = from + (count_wrapped->consumed - already_consumed);
                 std::size_t consumed = count_wrapped->consumed;
 
-                while(count) {
+                while (count) {
                     auto element_result = raw_parse<Iterator>(element_from, to);
                     auto *element = boost::get<element_t>(&element_result);
                     if (!element) {
@@ -181,9 +183,9 @@ namespace redis_async {
 
         template <typename Iterator>
         using primary_parser_t =
-            boost::variant<not_enough_data_t, protocol_error_t, string_parser_t<Iterator>,
-                           int_parser_t<Iterator>, error_parser_t<Iterator>,
-                           bulk_string_parser_t<Iterator>, array_parser_t<Iterator>>;
+            boost::variant<protocol_error_t, string_parser_t<Iterator>, int_parser_t<Iterator>,
+                           error_parser_t<Iterator>, bulk_string_parser_t<Iterator>,
+                           array_parser_t<Iterator>>;
 
         template <typename Iterator>
         struct unwrap_primary_parser_t : public boost::static_visitor<parse_result_t> {
@@ -195,10 +197,6 @@ namespace redis_async {
             unwrap_primary_parser_t(const Iterator &from, const Iterator &to)
                 : from_{from}
                 , to_{to} {
-            }
-
-            wrapped_result_t operator()(const not_enough_data_t &value) const {
-                return value;
             }
 
             wrapped_result_t operator()(const protocol_error_t &value) const {
@@ -217,7 +215,7 @@ namespace redis_async {
 
             static auto apply(const Iterator &from, const Iterator &to) -> result_t {
                 if (from == to) {
-                    return not_enough_data_t{};
+                    return protocol_error_t{error::make_error_code(error::errc::not_enough_data)};
                 }
 
                 switch (*from) {
@@ -233,7 +231,7 @@ namespace redis_async {
                     return array_parser_t<Iterator>{};
                 }
                 // wrong introduction;
-                return protocol_error_t{std::make_error_code(std::errc::bad_message)};
+                return protocol_error_t{error::make_error_code(error::errc::wrong_introduction)};
             }
         };
 

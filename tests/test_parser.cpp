@@ -55,9 +55,26 @@ TEST(ParserTests, simple_str) {
         boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
 
     ASSERT_EQ(answer.size(), positive_parse_result.consumed);
-    ASSERT_EQ("OK", boost::get<redis_async::string_t>(positive_parse_result.result).str);
+    ASSERT_EQ("OK", boost::get<redis_async::string_t>(positive_parse_result.result));
 
     buff.consume(positive_parse_result.consumed);
+}
+
+TEST(ParserTests, simple_str_protocol_error) {
+    using Buffer = boost::asio::streambuf;
+    using Iterator = boost::asio::buffers_iterator<Buffer::const_buffers_type, char>;
+    Buffer buff;
+
+    std::string answer = "+OK\r";
+    std::ostream(&buff) << answer;
+
+    auto data = buff.data();
+    auto parsed_result =
+        redis_async::details::raw_parse(Iterator ::begin(data), Iterator::end(data));
+    auto error = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+
+    ASSERT_EQ(error.code,
+              redis_async::error::make_error_code(redis_async::error::errc::not_enough_data));
 }
 
 TEST(ParserTests, error) {
@@ -71,13 +88,12 @@ TEST(ParserTests, error) {
     auto data = buff.data();
     auto parsed_result =
         redis_async::details::raw_parse(Iterator ::begin(data), Iterator::end(data));
-    auto positive_parse_result =
-        boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
+    auto error = boost::get<redis_async::details::error_t>(parsed_result);
 
-    ASSERT_EQ(answer.size(), positive_parse_result.consumed);
-    ASSERT_EQ("Some Error", boost::get<redis_async::error_t>(positive_parse_result.result).str);
+    ASSERT_EQ(answer.size(), error.consumed);
+    ASSERT_EQ("Some Error", error.str);
 
-    buff.consume(positive_parse_result.consumed);
+    buff.consume(error.consumed);
 }
 
 TEST(ParserTests, integer) {
@@ -113,7 +129,7 @@ TEST(ParserTests, bulk_string) {
         boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
 
     ASSERT_EQ(answer.size(), positive_parse_result.consumed);
-    ASSERT_EQ("some", boost::get<redis_async::string_t>(positive_parse_result.result).str);
+    ASSERT_EQ("some", boost::get<redis_async::string_t>(positive_parse_result.result));
 }
 
 TEST(ParserTests, bulk_string_emply) {
@@ -131,7 +147,7 @@ TEST(ParserTests, bulk_string_emply) {
         boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
 
     ASSERT_EQ(answer.size(), positive_parse_result.consumed);
-    ASSERT_EQ("", boost::get<redis_async::string_t>(positive_parse_result.result).str);
+    ASSERT_EQ("", boost::get<redis_async::string_t>(positive_parse_result.result));
 }
 
 TEST(ParserTests, nil) {
@@ -169,7 +185,7 @@ TEST(ParserTests, array) {
     ASSERT_EQ(answer.size(), positive_parse_result.consumed);
     auto array = boost::get<redis_async::array_holder_t>(positive_parse_result.result);
     ASSERT_EQ(array.elements.size(), 2);
-    ASSERT_EQ("some", boost::get<redis_async::string_t>(array.elements[0]).str);
+    ASSERT_EQ("some", boost::get<redis_async::string_t>(array.elements[0]));
     ASSERT_EQ(-555423, boost::get<redis_async::int_t>(array.elements[1]));
 }
 
@@ -227,8 +243,7 @@ TEST(ParserTests, array_with_nil_element) {
     ASSERT_EQ(answer.size(), positive_parse_result.consumed);
     auto array = boost::get<redis_async::array_holder_t>(positive_parse_result.result);
     ASSERT_EQ(array.elements.size(), 3);
-    ASSERT_EQ("some", boost::get<redis_async::string_t>(array.elements[0]).str);
+    ASSERT_EQ("some", boost::get<redis_async::string_t>(array.elements[0]));
     ASSERT_NO_THROW(boost::get<redis_async::nil_t>(array.elements[1]));
     ASSERT_EQ(-555423, boost::get<redis_async::int_t>(array.elements[2]));
 }
-

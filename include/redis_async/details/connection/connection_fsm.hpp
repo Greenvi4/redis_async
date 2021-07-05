@@ -459,13 +459,38 @@ namespace redis_async {
             }
 
             void read_message(size_t max_bytes) {
-                auto data = incoming_.data();
-                auto parsed_result =
-                    redis_async::details::raw_parse(iterator::begin(data), iterator::end(data));
-                auto positive_parse_result =
-                    boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
-                incoming_.consume(positive_parse_result.consumed);
-                fsm().process_event(events::recv{positive_parse_result.result});
+                while (max_bytes) {
+                    auto data = incoming_.data();
+                    auto parsed_result =
+                        redis_async::details::raw_parse(iterator::begin(data), iterator::end(data));
+                    {
+                        auto *answer = boost::get<positive_parse_result_t>(&parsed_result);
+                        if (answer) {
+                            incoming_.consume(answer->consumed);
+                            fsm().process_event(events::recv{std::move(answer->result)});
+                            max_bytes -= answer->consumed;
+                            continue;
+                        }
+                    }
+                    {
+                        auto *answer = boost::get<error_t >(&parsed_result);
+                        if (answer) {
+                            incoming_.consume(answer->consumed);
+                            fsm().process_event(error::query_error{std::move(answer->str)});
+                            max_bytes -= answer->consumed;
+                            continue;
+                        }
+                    }
+                    {
+                        auto *answer = boost::get<protocol_error_t>(&parsed_result);
+                        if (answer) {
+                            incoming_.consume(max_bytes);
+                            fsm().process_event(error::query_error{answer->code.message()});
+                            max_bytes = 0;
+                            continue;
+                        }
+                    }
+                }
             }
 
         private:
