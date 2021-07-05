@@ -3,8 +3,6 @@
 //
 #include <redis_async/redis_async.hpp>
 
-#include <redis_async/details/protocol/message.hpp>
-
 #include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <gtest/gtest.h>
@@ -15,28 +13,6 @@
 namespace ts = test_server;
 namespace ep = empty_port;
 
-TEST(CommandsTest, raw_cmd) {
-    using redis_async::details::message;
-    using redis_async::details::single_command_t;
-    using redis_async::details::command_container_t;
-    using Buffer = message::buffer_type;
-
-    {
-        single_command_t ping{"PING", "Hello, World!"};
-        message m(ping);
-        const std::string expected = "*2\r\n$4\r\nPING\r\n$13\r\nHello, World!\r\n";
-        Buffer result(m.buffer().first, m.buffer().second);
-        ASSERT_EQ(std::string(result.begin(), result.end()), expected);
-    }
-    {
-        command_container_t cont = {{"PING", "Hello, World!"}, {"LPUSH", "list", "value"}};
-        message m(cont);
-        const std::string expected = "*2\r\n$4\r\nPING\r\n$13\r\nHello, World!\r\n"
-                                     "*3\r\n$5\r\nLPUSH\r\n$4\r\nlist\r\n$5\r\nvalue\r\n";
-        Buffer result(m.buffer().first, m.buffer().second);
-        ASSERT_EQ(std::string(result.begin(), result.end()), expected);
-    }
-}
 
 TEST(CommandsTest, ping) {
     uint16_t port = ep::get_random();
