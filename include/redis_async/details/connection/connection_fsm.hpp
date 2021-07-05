@@ -11,12 +11,14 @@
 #include <boost/msm/front/functor_row.hpp>
 #include <boost/msm/front/state_machine_def.hpp>
 
+#include <boost/asio/buffers_iterator.hpp>
 #include <redis_async/asio_config.hpp>
 #include <redis_async/common.hpp>
-#include <redis_async/error.hpp>
 #include <redis_async/details/connection/base_connection.hpp>
 #include <redis_async/details/connection/events.hpp>
 #include <redis_async/details/protocol/message.hpp>
+#include <redis_async/details/protocol/parser.hpp>
+#include <redis_async/error.hpp>
 
 namespace redis_async {
     namespace details {
@@ -37,6 +39,9 @@ namespace redis_async {
             using none = msm::front::none;
             using state = msm::front::state<>;
             using terminate_state = msm::front::terminate_state<>;
+
+            using buffer = boost::asio::streambuf;
+            using iterator = boost::asio::buffers_iterator<buffer::const_buffers_type, char>;
 
             template <typename SourceState, typename Event, typename TargetState,
                       typename Action = none, typename Guard = none>
@@ -454,14 +459,20 @@ namespace redis_async {
             }
 
             void read_message(size_t max_bytes) {
-                fsm().process_event(events::recv{});
+                auto data = incoming_.data();
+                auto parsed_result =
+                    redis_async::details::raw_parse(iterator::begin(data), iterator::end(data));
+                auto positive_parse_result =
+                    boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
+                incoming_.consume(positive_parse_result.consumed);
+                fsm().process_event(events::recv{positive_parse_result.result});
             }
 
         private:
             asio_config::io_service_ptr io_service_;
             asio_config::io_service::strand strand_;
             transport_type transport_;
-            boost::asio::streambuf incoming_;
+            buffer incoming_;
             size_t connection_number_;
         };
 
