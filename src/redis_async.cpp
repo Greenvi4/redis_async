@@ -79,6 +79,20 @@ namespace redis_async {
         impl()->get_connection(alias, single_command_t{"ECHO", msg}, result, error);
     }
 
+    void rd_service::set(const rdalias &alias, boost::string_ref key, boost::string_ref value,
+                         const query_result_callback &result, const error_callback &error) {
+        // TODO Wrap callbacks in strands
+        using details::single_command_t;
+        impl()->get_connection(alias, single_command_t{"SET", key, value}, result, error);
+    }
+
+    void rd_service::get(const rdalias &alias, boost::string_ref key,
+                         const query_result_callback &result, const error_callback &error) {
+        // TODO Wrap callbacks in strands
+        using details::single_command_t;
+        impl()->get_connection(alias, single_command_t{"GET", key}, result, error);
+    }
+
     rd_service::pimpl &rd_service::impl_ptr() {
         static pimpl p;
         return p;

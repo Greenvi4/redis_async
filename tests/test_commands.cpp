@@ -53,8 +53,37 @@ TEST(CommandsTest, ping) {
 
     rd_service::echo(
         "tcp"_rd, msg,
+        [&](const result_t &res) { EXPECT_EQ(msg, boost::get<redis_async::string_t>(res)); },
+        [&](const redis_async::error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    const std::string key = "some_key";
+    const std::string value = "some_value";
+    rd_service::set(
+        "tcp"_rd, key, value,
+        [&](const result_t &res) { EXPECT_EQ("OK", boost::get<redis_async::string_t>(res)); },
+        [&](const redis_async::error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::get(
+        "tcp"_rd, key,
+        [&](const result_t &res) { EXPECT_EQ(value, boost::get<redis_async::string_t>(res)); },
+        [&](const redis_async::error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::get(
+        "tcp"_rd, "another_key",
         [&](const result_t &res) {
-            EXPECT_EQ(msg, boost::get<redis_async::string_t>(res));
+            EXPECT_NO_THROW(boost::get<redis_async::nil_t>(res));
             timer.cancel();
             rd_service::stop();
         },

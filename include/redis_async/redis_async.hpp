@@ -74,6 +74,10 @@ namespace redis_async {
                          const query_result_callback &result, const error_callback &error);
         static void echo(const rdalias &alias, boost::string_ref msg,
                          const query_result_callback &result, const error_callback &error);
+        static void set(const rdalias &alias, boost::string_ref key, boost::string_ref value,
+                         const query_result_callback &result, const error_callback &error);
+        static void get(const rdalias &alias, boost::string_ref key,
+                        const query_result_callback &result, const error_callback &error);
 
 
     private:
