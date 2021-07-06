@@ -7,6 +7,7 @@
 
 #include <redis_async/error.hpp>
 #include <redis_async/rd_types.hpp>
+#include <redis_async/details/protocol/markup_helper.hpp>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/variant.hpp>
@@ -16,49 +17,8 @@ namespace redis_async {
 
         static std::string terminator = "\r\n";
 
-        struct protocol_error_t {
-            std::error_code code;
-        };
-
-        struct error_t {
-            string_t str;
-            size_t consumed;
-        };
-
-        struct positive_parse_result_t {
-            result_t result;
-            size_t consumed;
-        };
-
-        using parse_result_t = boost::variant<protocol_error_t, error_t, positive_parse_result_t>;
-
         template <typename Iterator>
         parse_result_t raw_parse(const Iterator &from, const Iterator &to);
-
-        template <typename Iterator>
-        struct markup_helper_t {
-
-            static auto markup_string(size_t consumed, const Iterator &from, const Iterator &to)
-                -> parse_result_t {
-                return parse_result_t{
-                    positive_parse_result_t{result_t{string_t{std::string{from, to}}}, consumed}};
-            }
-
-            static auto markup_nil(size_t consumed) -> parse_result_t {
-                return parse_result_t{positive_parse_result_t{result_t{nil_t{}}, consumed}};
-            }
-
-            static auto markup_error(positive_parse_result_t &wrapped_string) -> parse_result_t {
-                auto &str = boost::get<string_t>(wrapped_string.result);
-                return parse_result_t{error_t{std::move(str), wrapped_string.consumed}};
-            }
-
-            static auto markup_int(positive_parse_result_t &wrapped_string) -> parse_result_t {
-                auto &str = boost::get<string_t>(wrapped_string.result);
-                return parse_result_t{positive_parse_result_t{
-                    result_t{boost::lexical_cast<int_t>(str)}, wrapped_string.consumed}};
-            }
-        };
 
         template <typename Iterator>
         struct string_parser_t {

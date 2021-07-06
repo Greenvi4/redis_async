@@ -1,7 +1,7 @@
 //
 // Created by niko on 02.07.2021.
 //
-#include <redis_async/details/connection/connection_fsm.hpp>
+#include <redis_async/details/connection/concrete_connection.hpp>
 #include <redis_async/details/connection/transport.hpp>
 
 #include <gtest/gtest.h>

@@ -5,17 +5,18 @@
 #ifndef REDIS_ASYNC_CONNECTION_FSM_HPP
 #define REDIS_ASYNC_CONNECTION_FSM_HPP
 
+#include <boost/asio/buffers_iterator.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/asio/streambuf.hpp>
 #include <boost/msm/back/state_machine.hpp>
 #include <boost/msm/front/functor_row.hpp>
 #include <boost/msm/front/state_machine_def.hpp>
 
-#include <boost/asio/buffers_iterator.hpp>
 #include <redis_async/asio_config.hpp>
 #include <redis_async/common.hpp>
 #include <redis_async/details/connection/base_connection.hpp>
 #include <redis_async/details/connection/events.hpp>
+#include <redis_async/details/connection/handler_parse_result.hpp>
 #include <redis_async/details/protocol/message.hpp>
 #include <redis_async/details/protocol/parser.hpp>
 #include <redis_async/error.hpp>
@@ -25,32 +26,6 @@ namespace redis_async {
 
         namespace msm = boost::msm;
         namespace mpl = boost::mpl;
-
-        template <typename FSM>
-        struct handler_parse_result_t : public boost::static_visitor<std::size_t> {
-
-            explicit handler_parse_result_t(FSM &fsm)
-                : m_fsm(fsm) {
-            }
-
-            std::size_t operator()(protocol_error_t &err) const {
-                m_fsm.process_event(error::query_error{err.code.message()});
-                return 0;
-            }
-
-            std::size_t operator()(error_t &err) const {
-                m_fsm.process_event(error::query_error{err.str});
-                return err.consumed;
-            }
-
-            std::size_t operator()(positive_parse_result_t &res) const {
-                m_fsm.process_event(events::recv{std::move(res.result)});
-                return res.consumed;
-            }
-
-        private:
-            FSM &m_fsm;
-        };
 
         template <typename TransportType, typename SharedType>
         struct connection_fsm_def
@@ -491,7 +466,7 @@ namespace redis_async {
                     auto parsed_result =
                         redis_async::details::raw_parse(iterator::begin(data), iterator::end(data));
                     auto consumed = boost::apply_visitor(handler_t{fsm()}, parsed_result);
-                    if(!consumed)
+                    if (!consumed)
                         consumed = max_bytes;
                     incoming_.consume(consumed);
                     max_bytes -= consumed;
@@ -504,78 +479,6 @@ namespace redis_async {
             transport_type transport_;
             buffer incoming_;
             size_t connection_number_;
-        };
-
-        template <typename TransportType>
-        class concrete_connection
-            : public basic_connection,
-              public msm::back::state_machine<
-                  connection_fsm_def<TransportType, concrete_connection<TransportType>>> {
-        public:
-            using transport_type = TransportType;
-            using this_type = concrete_connection<transport_type>;
-            using fsm_type = msm::back::state_machine<connection_fsm_def<TransportType, this_type>>;
-
-            concrete_connection(const io_service_ptr &svc, connection_callbacks callbacks)
-                : basic_connection()
-                , fsm_type(svc)
-                , callbacks_(std::move(callbacks)) {
-            }
-
-            ~concrete_connection() override {
-                fsm_type::stop();
-            };
-
-        protected:
-            void notifyIdleImpl() override {
-                if (callbacks_.idle) {
-                    callbacks_.idle(fsm_type::shared_from_this());
-                } else {
-                    LOG4CXX_WARN(logger,
-                                 "Conn#" << fsm_type::number() << ": No connection idle callback")
-                }
-            }
-
-            void notifyTerminatedImpl() override {
-                if (callbacks_.terminated) {
-                    callbacks_.terminated(fsm_type::shared_from_this());
-                } else {
-                    LOG4CXX_INFO(logger, "Conn#" << fsm_type::number()
-                                                 << ": No connection terminated callback")
-                }
-                callbacks_ = connection_callbacks(); // clean up callbacks, no work further.
-            }
-
-            void notifyErrorImpl(error::connection_error const &e) override {
-                LOG4CXX_ERROR(logger,
-                              "Conn#" << fsm_type::number() << ": Connection error " << e.what())
-                if (callbacks_.error) {
-                    callbacks_.error(connection_ptr(), e);
-                } else {
-                    LOG4CXX_ERROR(logger,
-                                  "Conn#" << fsm_type::number() << ": No connection_error callback")
-                }
-            }
-
-        private:
-            void connectImpl(connection_options const &opts) override {
-                fsm_type::process_event(opts);
-            }
-
-            rdalias const &aliasImpl() const override {
-                return fsm_type::conn_opts_.alias;
-            }
-
-            void executeImpl(events::execute &&query) override {
-                fsm_type::process_event(::std::move(query));
-            }
-
-            void terminateImpl() override {
-                fsm_type::process_event(events::terminate{});
-            }
-
-        private:
-            connection_callbacks callbacks_;
         };
 
     } // namespace details
