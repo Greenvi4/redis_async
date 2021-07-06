@@ -45,7 +45,7 @@ namespace redis_async {
 
     auto connect_string_parser::split_uri(const std::string &uri, connection_options &opts)
         -> std::tuple<std::string, std::string> {
-        auto pos = uri.find("=");
+        auto pos = uri.find('=');
         if (pos == std::string::npos)
             throw error::connection_error("invalid connection string");
 
@@ -64,7 +64,7 @@ namespace redis_async {
             throw error::connection_error("invalid connection string");
 
         start = pos + 3;
-        pos = uri.find("@", start);
+        pos = uri.find('@', start);
         if (pos == std::string::npos) {
             // No auth info.
             return std::make_tuple(std::string{}, uri.substr(start));
@@ -80,22 +80,17 @@ namespace redis_async {
             // No auth info.
             return;
         }
-
-        auto pos = auth.find(":");
-        if (pos == std::string::npos)
-            opts.password = auth;
-        else
-            opts.password = auth.substr(pos + 1);
+        opts.password = auth;
     }
     auto connect_string_parser::split_path(const std::string &path, connection_options &opts)
         -> std::string {
-        auto parameter_pos = path.rfind("?");
+        auto parameter_pos = path.rfind('?');
         std::string parameter_string;
         if (parameter_pos != std::string::npos) {
             parameter_string = path.substr(parameter_pos + 1);
         }
 
-        auto pos = path.rfind("/");
+        auto pos = path.rfind('/');
         if (pos != std::string::npos) {
             // Might specified a db number.
             try {
