@@ -63,7 +63,7 @@ namespace redis_async {
 
             struct disconnect {
                 template <typename SourceState, typename TargetState>
-                void operator()(events::terminate const &, connection_fsm_type &fsm, SourceState &,
+                void operator()(events::terminate , connection_fsm_type &fsm, SourceState &,
                                 TargetState &) {
                     LOG4CXX_INFO(logger, "Conn#" << fsm.number() << ": connection: disconnect")
                     fsm.close_transport();
@@ -111,7 +111,7 @@ namespace redis_async {
                     fsm.connect_transport(opts);
                 }
 
-                void on_exit(events::complete const &, connection_fsm_type &fsm) {
+                void on_exit(events::complete , connection_fsm_type &fsm) {
                     LOG4CXX_TRACE(logger, "Conn#" << fsm.number()
                                                   << ": state[connecting]: exit by complete")
                     fsm.start_read();
@@ -268,14 +268,14 @@ namespace redis_async {
 
                 conn_opts_ = opts;
                 auto _this = shared_base::shared_from_this();
-                transport_.connect_async(conn_opts_, [_this](asio_config::error_code const &ec) {
+                transport_.connect_async(conn_opts_, [_this](asio_config::error_code ec) {
                     _this->handle_connect(ec);
                 });
             }
 
             void start_read() {
                 auto _this = shared_base::shared_from_this();
-                transport_.async_read(incoming_, [_this](asio_config::error_code const &ec,
+                transport_.async_read(incoming_, [_this](asio_config::error_code ec,
                                                          size_t bytes_transferred) {
                     _this->handle_read(ec, bytes_transferred);
                 });
@@ -290,12 +290,12 @@ namespace redis_async {
                 send({cmd});
             }
 
-            void send(message &&m, asio_io_handler handler = asio_io_handler()) {
+            void send(message &&m, const asio_io_handler &handler = asio_io_handler()) {
                 if (transport_.connected()) {
                     auto msg = ::std::make_shared<message>(::std::move(m));
                     auto data_range = msg->buffer();
                     auto _this = shared_base::shared_from_this();
-                    auto write_handler = [_this, handler, msg](asio_config::error_code const &ec,
+                    auto write_handler = [_this, handler, msg](asio_config::error_code ec,
                                                                size_t sz) {
                         if (handler)
                             handler(ec, sz);
@@ -316,7 +316,7 @@ namespace redis_async {
             //@{
             /** @connection events notifications */
             template <typename Source>
-            void notify_result(Source &state, result_t res) {
+            void notify_result(Source &state, const result_t &res) {
                 if (state.query_.result) {
                     auto result_cb = state.query_.result;
                     auto error_cb = state.query_.error;
@@ -432,7 +432,7 @@ namespace redis_async {
                 return static_cast<connection_fsm_type const &>(*this);
             }
 
-            void handle_connect(asio_config::error_code const &ec) {
+            void handle_connect(asio_config::error_code ec) {
                 if (!ec) {
                     fsm().process_event(events::complete{});
                 } else {
@@ -440,7 +440,7 @@ namespace redis_async {
                 }
             }
 
-            void handle_read(asio_config::error_code const &ec, size_t bytes_transferred) {
+            void handle_read(asio_config::error_code ec, size_t bytes_transferred) {
                 if (!ec) {
                     // read message
                     read_message(bytes_transferred);
@@ -452,7 +452,7 @@ namespace redis_async {
                 }
             }
 
-            void handle_write(asio_config::error_code const &ec, size_t) {
+            void handle_write(asio_config::error_code ec, size_t) {
                 if (ec) {
                     // Socket error - force termination
                     fsm().process_event(error::connection_error(ec.message()));

@@ -163,7 +163,7 @@ namespace redis_async {
                 , to_{to} {
             }
 
-            wrapped_result_t operator()(const protocol_error_t &value) const {
+            wrapped_result_t operator()(redis_async::details::protocol_error_t value) const {
                 return value;
             }
 

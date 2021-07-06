@@ -13,7 +13,7 @@
 namespace ts = test_server;
 namespace ep = empty_port;
 
-TEST(CommandsTest, ping) {
+TEST(CommandsTest, all_commands) {
     uint16_t port = ep::get_random();
     auto port_str = boost::lexical_cast<std::string>(port);
     auto server = ts::make_server({"redis-server", "--port", port_str});
@@ -23,7 +23,7 @@ TEST(CommandsTest, ping) {
     rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
 
     boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
-    timer.async_wait([&](const boost::system::error_code &ec) {
+    timer.async_wait([&](boost::system::error_code ec) {
         if (ec)
             return;
         rd_service::stop();
@@ -91,6 +91,37 @@ TEST(CommandsTest, ping) {
             timer.cancel();
             rd_service::stop();
             FAIL() << err.what();
+        });
+
+    rd_service::run();
+}
+
+TEST(CommandsTest, hadnle_exceptions) {
+
+    uint16_t port = ep::get_random();
+    auto port_str = boost::lexical_cast<std::string>(port);
+    auto server = ts::make_server({"redis-server", "--port", port_str});
+    ep::wait_port(port);
+
+    using redis_async::rd_service;
+    rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
+
+    boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
+    timer.async_wait([&](boost::system::error_code ec) {
+      if (ec)
+          return;
+      rd_service::stop();
+      FAIL() << "Test timer expired";
+    });
+
+    using redis_async::result_t;
+
+    rd_service::get(
+        "tcp"_rd, "some_wrong_key",
+        [](const result_t &res) { boost::get<redis_async::string_t>(res); },
+        [&](const redis_async::error::rd_error &) {
+          timer.cancel();
+          rd_service::stop();
         });
 
     rd_service::run();

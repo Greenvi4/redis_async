@@ -20,17 +20,19 @@ namespace process {
         class executor {
             int _pipe_sink = -1;
 
-            void write_error(const std::error_code &ec, const char *msg) {
+            void write_error(std::error_code ec, const char *msg) {
                 // I am the child
                 int len = ec.value();
-                ::write(_pipe_sink, &len, sizeof(int));
-
+                auto res = ::write(_pipe_sink, &len, sizeof(int));
+                static_cast<void>(res);
                 len = std::strlen(msg) + 1;
-                ::write(_pipe_sink, &len, sizeof(int));
-                ::write(_pipe_sink, msg, len);
+                res = ::write(_pipe_sink, &len, sizeof(int));
+                static_cast<void>(res);
+                res = ::write(_pipe_sink, msg, len);
+                static_cast<void>(res);
             }
 
-            void internal_error_handle(const std::error_code &ec, const char *msg) {
+            void internal_error_handle(std::error_code ec, const char *msg) {
                 this->_ec = ec;
                 this->_msg = msg;
                 if (this->pid == 0)
@@ -133,6 +135,7 @@ namespace process {
                                         boost::algorithm::token_compress_on);
                 BOOST_ASSERT(!seq.empty());
                 exe = seq.front().c_str();
+                cmd_impl.reserve(seq.size());
 
                 if (!seq.empty()) {
                     for (auto & v : seq)
@@ -161,10 +164,10 @@ namespace process {
                 return _ec;
             }
 
-            void set_error(const std::error_code &ec, const char *msg) {
+            void set_error(std::error_code ec, const char *msg) {
                 internal_error_handle(ec, msg);
             }
-            void set_error(const std::error_code &ec, const std::string &msg) {
+            void set_error(std::error_code ec, const std::string &msg) {
                 set_error(ec, msg.c_str());
             };
         };

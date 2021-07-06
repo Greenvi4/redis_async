@@ -16,7 +16,7 @@ struct dummy_transport {
     dummy_transport(io_service_ptr) {
     }
 
-    void connect_async(const connection_options &, connect_callback cb) {
+    void connect_async(const connection_options &, const connect_callback &cb) {
         asio_config::error_code ec;
         cb(ec);
     }

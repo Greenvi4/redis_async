@@ -18,7 +18,7 @@ namespace redis_async {
             , socket(*service) {
         }
 
-        void tcp_transport::connect_async(connection_options const &conn, connect_callback cb) {
+        void tcp_transport::connect_async(connection_options const &conn, const connect_callback &cb) {
             if (conn.uri.empty()) {
                 throw error::connection_error("No connection uri!");
             }
@@ -38,9 +38,9 @@ namespace redis_async {
                                     boost::bind(&tcp_transport::handle_resolve, this, _1, _2, cb));
         }
 
-        void tcp_transport::handle_resolve(error_code const &ec,
+        void tcp_transport::handle_resolve(redis_async::details::tcp_transport::error_code ec,
                                            tcp::resolver::iterator endpoint_iterator,
-                                           connect_callback cb) {
+                                           const connect_callback &cb) {
             if (!ec) {
                 boost::asio::async_connect(
                     socket, std::move(endpoint_iterator),
@@ -50,7 +50,7 @@ namespace redis_async {
             }
         }
 
-        void tcp_transport::handle_connect(error_code const &ec, connect_callback cb) {
+        void tcp_transport::handle_connect(redis_async::details::tcp_transport::error_code ec, const connect_callback &cb) {
             cb(ec);
         }
 

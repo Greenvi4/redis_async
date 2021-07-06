@@ -23,7 +23,7 @@ namespace redis_async {
 
             explicit tcp_transport(const io_service_ptr &service);
 
-            void connect_async(connection_options const &, connect_callback);
+            void connect_async(connection_options const &, const connect_callback &);
             bool connected() const;
             void close();
 
@@ -41,9 +41,11 @@ namespace redis_async {
             tcp::resolver resolver_;
             socket_type socket;
 
-            void handle_resolve(error_code const &ec, tcp::resolver::iterator endpoint_iterator,
-                                connect_callback);
-            void handle_connect(error_code const &ec, connect_callback);
+            void handle_resolve(redis_async::details::tcp_transport::error_code ec,
+                                tcp::resolver::iterator endpoint_iterator,
+                                const connect_callback &);
+            void handle_connect(redis_async::details::tcp_transport::error_code ec,
+                                const connect_callback &);
         };
 
         struct socket_transport {

@@ -33,9 +33,14 @@ namespace empty_port {
                 throw std::runtime_error("Cannot get socket");
             }
         }
+
         ~SocketHolder() {
             close(socket_);
         }
+
+        SocketHolder(const SocketHolder &) = delete;
+        SocketHolder& operator=(const SocketHolder &) = delete;
+
         socket_t &socket() {
             return socket_;
         }
@@ -45,18 +50,18 @@ namespace empty_port {
     static constexpr port_t MAX_PORT = 65535;
 
     struct impl {
-        static bool can_listen(const port_t port, const char *host);
-        static void fill_struct(const socket_t &socket, sockaddr_in &addr, const port_t port,
+        static bool can_listen(port_t port, const char *host);
+        static void fill_struct(empty_port::socket_t socket, sockaddr_in &addr, port_t port,
                                 const char *host);
-        static bool check_port_impl(const port_t port, const char *host);
+        static bool check_port_impl(port_t port, const char *host);
         static port_t get_random_impl(const char *host);
         template <typename D>
-        static bool wait_port_impl(const port_t port, const char *host, D max_wait);
+        static bool wait_port_impl(port_t port, const char *host, D max_wait);
     };
 
     /* TCP impl */
     template <typename D>
-    inline bool impl::wait_port_impl(const port_t port, const char *host, D max_wait) {
+    inline bool impl::wait_port_impl(port_t port, const char *host, D max_wait) {
         auto stop_at = clock_t::now() + max_wait;
         do {
             if (!impl::check_port_impl(port, host)) {
@@ -85,20 +90,20 @@ namespace empty_port {
         throw std::runtime_error("Cannot get random port");
     }
 
-    inline void impl::fill_struct(const socket_t & /*socket*/, sockaddr_in &addr, const port_t port,
+    inline void impl::fill_struct(empty_port::socket_t  /*socket*/, sockaddr_in &addr, const port_t port,
                                   const char *host) {
         std::memset(&addr, 0, sizeof(addr));
         addr.sin_family = AF_INET;
         addr.sin_port = htons(port);
 
-        struct addrinfo hints, *result = NULL;
+        addrinfo hints, *result = nullptr;
         std::memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_STREAM;
 
         struct sockaddr_in *host_addr;
         // looks up IPv4/IPv6 address by host name or stringized IP address
-        int r = getaddrinfo(host, NULL, &hints, &result);
+        int r = getaddrinfo(host, nullptr, &hints, &result);
         if (r) {
             throw std::runtime_error(std::string("Cannot getaddrinfo:: ") + strerror(r));
         }
@@ -107,7 +112,7 @@ namespace empty_port {
         freeaddrinfo(result);
     }
 
-    inline bool impl::can_listen(const port_t port, const char *host) {
+    inline bool impl::can_listen(port_t port, const char *host) {
         SocketHolder sh(socket(AF_INET, SOCK_STREAM, 0));
         sockaddr_in addr;
         fill_struct(sh.socket(), addr, port, host);
@@ -123,7 +128,7 @@ namespace empty_port {
         return true;
     }
 
-    inline bool impl::check_port_impl(const port_t port, const char *host) {
+    inline bool impl::check_port_impl(port_t port, const char *host) {
         SocketHolder sh(socket(AF_INET, SOCK_STREAM, 0));
         sockaddr_in remote_addr;
 
@@ -137,7 +142,7 @@ namespace empty_port {
     }
 
     /* public interface */
-    inline bool check_port(const port_t port, const char *host = "127.0.0.1") {
+    inline bool check_port(port_t port, const char *host = "127.0.0.1") {
         return impl::check_port_impl(port, host);
     }
 

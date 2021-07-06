@@ -174,7 +174,7 @@ namespace redis_async {
                     enqueue_event({std::move(cmd), conn_cb, err});
                 }
             }
-            void close(simple_callback close_cb) {
+            void close(const simple_callback &close_cb) {
                 bool expected = false;
                 if (closed_.compare_exchange_strong(expected, true)) {
                     closed_callback_ = close_cb;

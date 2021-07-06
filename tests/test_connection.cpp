@@ -31,6 +31,9 @@ struct tmp_file_holder_t {
         std::remove(filename);
     }
 
+    tmp_file_holder_t(const tmp_file_holder_t &) = delete;
+    tmp_file_holder_t& operator=(const tmp_file_holder_t &) = delete;
+
 private:
     char temp[PATH_MAX] = "/tmp/redis.XXXXXX";
     int m_fd;
