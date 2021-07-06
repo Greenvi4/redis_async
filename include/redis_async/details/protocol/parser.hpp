@@ -28,7 +28,7 @@ namespace redis_async {
 
                 auto found_terminator = std::search(from, to, terminator.begin(), terminator.end());
                 if (found_terminator == to)
-                    return protocol_error_t{error::make_error_code(error::errc::not_enough_data)};
+                    return helper::markup_protocol_error(error::errc::not_enough_data);
                 size_t consumed =
                     terminator.size() + std::distance(from, found_terminator) + already_consumed;
                 return helper::markup_string(consumed, from, found_terminator);
@@ -63,7 +63,11 @@ namespace redis_async {
                 if (!wrapped_string) {
                     return result;
                 }
-                return helper::markup_int(*wrapped_string);
+                try {
+                    return helper::markup_int(*wrapped_string);
+                } catch (const std::exception &) {
+                    return helper::markup_protocol_error(error::errc::count_conversion);
+                }
             }
         };
 
@@ -84,19 +88,19 @@ namespace redis_async {
                 if (count == -1)
                     return helper::markup_nil(count_wrapped->consumed);
                 else if (count < -1)
-                    return protocol_error_t{error::make_error_code(error::errc::count_range)};
+                    return helper::markup_protocol_error(error::errc::count_range);
 
                 auto terminator_size = terminator.size();
-                if (left < count + terminator_size) {
-                    return protocol_error_t{error::make_error_code(error::errc::not_enough_data)};
-                }
+                if (left < count + terminator_size)
+                    return helper::markup_protocol_error(error::errc::not_enough_data);
+
                 auto tail = head + count;
                 auto tail_end = tail + terminator_size;
                 bool found_terminator =
                     std::equal(tail, tail_end, terminator.begin(), terminator.end());
-                if (!found_terminator) {
-                    return protocol_error_t{error::make_error_code(error::errc::bulk_terminator)};
-                }
+                if (!found_terminator)
+                    return helper::markup_protocol_error(error::errc::bulk_terminator);
+
                 size_t consumed = count_wrapped->consumed + count + terminator_size;
                 return helper::markup_string(consumed, head, tail);
             }
@@ -118,7 +122,7 @@ namespace redis_async {
                 if (count == -1)
                     return helper::markup_nil(count_wrapped->consumed);
                 else if (count < -1)
-                    return protocol_error_t{error::make_error_code(error::errc::count_range)};
+                    return helper::markup_protocol_error(error::errc::count_range);
 
                 array_holder_t array;
                 array.elements.reserve(count);

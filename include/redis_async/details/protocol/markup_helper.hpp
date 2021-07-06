@@ -9,7 +9,6 @@
 
 #include <boost/lexical_cast.hpp>
 
-
 namespace redis_async {
     namespace details {
 
@@ -17,7 +16,7 @@ namespace redis_async {
         struct markup_helper_t {
 
             static auto markup_string(size_t consumed, const Iterator &from, const Iterator &to)
-            -> parse_result_t {
+                -> parse_result_t {
                 return parse_result_t{
                     positive_parse_result_t{result_t{string_t{std::string{from, to}}}, consumed}};
             }
@@ -35,6 +34,10 @@ namespace redis_async {
                 auto &str = boost::get<string_t>(wrapped_string.result);
                 return parse_result_t{positive_parse_result_t{
                     result_t{boost::lexical_cast<int_t>(str)}, wrapped_string.consumed}};
+            }
+
+            static auto markup_protocol_error(error::errc ec) -> parse_result_t {
+                return parse_result_t{protocol_error_t{error::make_error_code(ec)}};
             }
         };
 
