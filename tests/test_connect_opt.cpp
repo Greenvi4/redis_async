@@ -74,6 +74,8 @@ TEST(ConnectOptTest, without_port) {
     ASSERT_EQ(conn.keep_alive, false);
     ASSERT_EQ(conn.connect_timeout, std::chrono::milliseconds(0));
     ASSERT_EQ(conn.socket_timeout, std::chrono::milliseconds(0));
+
+    ASSERT_NO_THROW("main=udp://192.168.0.10"_redis);
 }
 
 TEST(ConnectOptTest, keep_alive) {

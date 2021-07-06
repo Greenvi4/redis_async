@@ -43,8 +43,8 @@ TEST(ConnectionTest, tcp) {
     ep::wait_port(port);
 
     using redis_async::rd_service;
-    rd_service::add_connection("tcp=tcp://localhost:" + port_str);
-//    rd_service::run();
+    auto conn = redis_async::connection_options::parse("tcp=tcp://localhost:" + port_str);
+    rd_service::add_connection(conn);
 }
 
 TEST(ConnectionTest, uds) {
@@ -61,5 +61,23 @@ TEST(ConnectionTest, uds) {
 
     using redis_async::rd_service;
     rd_service::add_connection(std::string("uds=unix://") + redis_socket.filename);
-//    rd_service::run();
+}
+
+TEST(ConnectionTest, conn_err) {
+    uint16_t port = ep::get_random();
+    auto port_str = boost::lexical_cast<std::string>(port);
+    auto server = ts::make_server({"redis-server", "--port", port_str});
+    ep::wait_port(port);
+
+    using redis_async::rd_service;
+    using redis_async::result_t;
+
+    ASSERT_THROW(rd_service::ping(
+                     "wrong_name_of_service"_rd, [](const result_t &) {},
+                     [&](const redis_async::error::rd_error &err) { FAIL() << err.what(); }),
+                 redis_async::error::connection_error);
+    ASSERT_THROW(rd_service::add_connection("main=udp://192.168.0.10"_redis),
+                 redis_async::error::connection_error);
+    ASSERT_THROW(rd_service::add_connection("main=udp://192.168.0.10"_redis, 0),
+                 redis_async::error::connection_error);
 }

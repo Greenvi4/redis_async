@@ -21,17 +21,6 @@ namespace redis_async {
         }
     } // namespace
 
-    void rd_service::initialize(size_t pool_size) {
-        lock_type lock(db_service_lock());
-
-        auto &pimpl = impl_ptr();
-        if (!pimpl) {
-            pimpl.reset(new details::redis_impl(pool_size));
-        } else {
-            pimpl->set_defaults(pool_size);
-        }
-    }
-
     void rd_service::add_connection(const std::string &connection_string, optional_size pool_size) {
         impl()->add_connection(connection_string, std::move(pool_size));
     }

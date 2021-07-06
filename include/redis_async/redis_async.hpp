@@ -21,13 +21,6 @@ namespace redis_async {
         static const size_t DEFAULT_POOL_SIZE = 4;
 
         /**
-         * @brief Initialize the database service with the default pool_size per
-         *         alias and default connection parameters.
-         * @param pool_size number of connections per alias
-         */
-        static void initialize(size_t pool_size);
-
-        /**
          *    @brief Add a connection specification.
          *
          *    Requires an alias, for the rd_service to be referenced by it later.
