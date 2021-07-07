@@ -6,6 +6,7 @@
 #define REDIS_ASYNC_REDIS_ASYNC_HPP
 
 #include <redis_async/asio_config.hpp>
+#include <redis_async/command_options.hpp>
 #include <redis_async/common.hpp>
 
 #include <boost/utility/string_ref.hpp>
@@ -41,37 +42,30 @@ namespace redis_async {
 
         static asio_config::io_service_ptr io_service();
 
-        /**
-         *     @brief Create a connection or retrieve a connection from the connection pool
-         *         and start a transaction.
-         *
-         *    Will lookup a connection by alias. If a new connection must be created,
-         *     it will be created with the connection string associated with the alias.
-         *    If there is an idle connection in the pool, will return it.
-         *    If no idle connections are available, and the size of connection pool
-         *    didn't reach it's limit, will create a new one.
-         *    If the pool is full and no idle connections are available,
-         *    will return the first connection that becomes idle.
-         *
-         *    @param alias database alias
-         *    @param result callback function that will be called when a connection
-         *             becomes available and transaction is started.
-         *    @param error callback function that will be called in case of an error.
-         *    @param isolation transaction isolation level
-         *    @throws tip::db::pg::error::connection_error if the alias is not
-         *          registered with the database service.
-         */
         static void ping(const rdalias &alias, const query_result_callback &result,
                          const error_callback &error);
         static void ping(const rdalias &alias, boost::string_ref msg,
                          const query_result_callback &result, const error_callback &error);
         static void echo(const rdalias &alias, boost::string_ref msg,
                          const query_result_callback &result, const error_callback &error);
-        static void set(const rdalias &alias, boost::string_ref key, boost::string_ref value,
-                         const query_result_callback &result, const error_callback &error);
-        static void get(const rdalias &alias, boost::string_ref key,
+
+        static void set(const rdalias &alias,
+                        boost::string_ref key, boost::string_ref value,
+                        const query_result_callback &result, const error_callback &error);
+        static void set(const rdalias &alias,
+                        boost::string_ref key, boost::string_ref value, UpdateType udp,
+                        const query_result_callback &result, const error_callback &error);
+        static void set(const rdalias &alias,
+                        boost::string_ref key, boost::string_ref value,
+                        const std::chrono::milliseconds &ttl,
+                        const query_result_callback &result, const error_callback &error);
+        static void set(const rdalias &alias,
+                        boost::string_ref key, boost::string_ref value, UpdateType udp,
+                        const std::chrono::milliseconds &ttl,
                         const query_result_callback &result, const error_callback &error);
 
+        static void get(const rdalias &alias, boost::string_ref key,
+                        const query_result_callback &result, const error_callback &error);
 
     private:
         // No instances

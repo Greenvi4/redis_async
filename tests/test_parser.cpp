@@ -1,7 +1,9 @@
 //
 // Created by niko on 02.07.2021.
 //
-#include <redis_async/details/protocol/message.hpp>
+#include <redis_async/details/protocol/serializer.hpp>
+#include <redis_async/details/protocol/command.hpp>
+
 #include <redis_async/details/protocol/parser.hpp>
 
 #include <boost/asio/buffers_iterator.hpp>
@@ -11,35 +13,35 @@
 
 TEST(ParserTests, raw_cmd) {
     using redis_async::details::command_container_t;
-    using redis_async::details::message;
     using redis_async::details::single_command_t;
-    using Buffer = message::buffer_type;
+    using Buffer = std::string;
+    using Protocol = redis_async::details::Protocol;
 
     {
         single_command_t ping{"PING", "Hello, World!"};
-        message m(ping);
+        Buffer result;
+        Protocol::serialize(result, ping);
         const std::string expected = "*2\r\n$4\r\nPING\r\n$13\r\nHello, World!\r\n";
-        Buffer result(m.buffer().first, m.buffer().second);
-        ASSERT_EQ(m.size(), expected.size());
-        ASSERT_EQ(std::string(result.begin(), result.end()), expected);
+        ASSERT_EQ(result.size(), expected.size());
+        ASSERT_EQ(result, expected);
     }
     {
         single_command_t cmd("HSET", "key", "value1", "", "value2", "");
-        message m(cmd);
+        Buffer result;
+        Protocol::serialize(result, cmd);
         const std::string expected("*6\r\n$4\r\nHSET\r\n$3\r\nkey\r\n$6\r\nvalue1\r\n$0\r\n\r\n$"
                                    "6\r\nvalue2\r\n$0\r\n\r\n");
-        Buffer result(m.buffer().first, m.buffer().second);
-        ASSERT_EQ(m.size(), expected.size());
-        ASSERT_EQ(std::string(result.begin(), result.end()), expected);
+        ASSERT_EQ(result.size(), expected.size());
+        ASSERT_EQ(result, expected);
     }
     {
         command_container_t cont = {{"PING", "Hello, World!"}, {"LPUSH", "list", "value"}};
-        message m(cont);
+        Buffer result;
+        Protocol::serialize(result, cont);
         const std::string expected = "*2\r\n$4\r\nPING\r\n$13\r\nHello, World!\r\n"
                                      "*3\r\n$5\r\nLPUSH\r\n$4\r\nlist\r\n$5\r\nvalue\r\n";
-        Buffer result(m.buffer().first, m.buffer().second);
-        ASSERT_EQ(m.size(), expected.size());
-        ASSERT_EQ(std::string(result.begin(), result.end()), expected);
+        ASSERT_EQ(result.size(), expected.size());
+        ASSERT_EQ(result, expected);
     }
 }
 

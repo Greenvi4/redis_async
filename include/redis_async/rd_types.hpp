@@ -12,7 +12,12 @@ namespace redis_async {
 
     using string_t = std::string;
     using int_t = int64_t;
-    struct nil_t {};
+    struct nil_t {
+        friend std::ostream &operator<<(std::ostream &out, const redis_async::nil_t &) {
+            out << "{NIL_t}";
+            return out;
+        }
+    };
 
     // forward declaration
     struct array_holder_t;
@@ -23,6 +28,12 @@ namespace redis_async {
     struct array_holder_t {
         using recursive_array_t = std::vector<result_t>;
         recursive_array_t elements;
+        friend std::ostream &operator<<(std::ostream &out, const redis_async::array_holder_t &ah) {
+            out << "{ARRAY_t}\n";
+            for(const auto &item : ah.elements)
+                out << '\t' << item << '\n';
+            return out;
+        }
     };
 
 } // namespace redis_async

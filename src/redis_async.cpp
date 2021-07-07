@@ -19,6 +19,20 @@ namespace redis_async {
             static mutex_type _mtx;
             return _mtx;
         }
+
+        std::string set_update_type(UpdateType udp) {
+            switch (udp) {
+            case UpdateType::exist:
+                return "XX";
+            case UpdateType::not_exist:
+                return "NX";
+            default:
+                break;
+            }
+            throw error::client_error("Invalid update type " +
+                                      std::to_string(static_cast<int>(udp)));
+        }
+
     } // namespace
 
     void rd_service::add_connection(const std::string &connection_string, optional_size pool_size) {
@@ -73,6 +87,36 @@ namespace redis_async {
         // TODO Wrap callbacks in strands
         using details::single_command_t;
         impl()->get_connection(alias, single_command_t{"SET", key, value}, result, error);
+    }
+
+    void rd_service::set(const rdalias &alias, boost::string_ref key, boost::string_ref value,
+                         UpdateType udp, const query_result_callback &result,
+                         const error_callback &error) {
+        // TODO Wrap callbacks in strands
+        using details::single_command_t;
+        impl()->get_connection(alias, single_command_t{"SET", key, value, set_update_type(udp)},
+                               result, error);
+    }
+
+    void rd_service::set(const rdalias &alias, boost::string_ref key, boost::string_ref value,
+                         const std::chrono::milliseconds &ttl, const query_result_callback &result,
+                         const error_callback &error) {
+        // TODO Wrap callbacks in strands
+        using details::single_command_t;
+        impl()->get_connection(
+            alias, single_command_t{"SET", key, value, "PX", std::to_string(ttl.count())}, result,
+            error);
+    }
+
+    void rd_service::set(const rdalias &alias, boost::string_ref key, boost::string_ref value,
+                         UpdateType udp, const std::chrono::milliseconds &ttl,
+                         const query_result_callback &result, const error_callback &error) {
+        // TODO Wrap callbacks in strands
+        using details::single_command_t;
+        impl()->get_connection(alias,
+                               single_command_t{"SET", key, value, "PX",
+                                                std::to_string(ttl.count()), set_update_type(udp)},
+                               result, error);
     }
 
     void rd_service::get(const rdalias &alias, boost::string_ref key,

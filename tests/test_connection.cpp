@@ -48,6 +48,7 @@ TEST(ConnectionTest, tcp) {
     using redis_async::rd_service;
     auto conn = redis_async::connection_options::parse("tcp=tcp://localhost:" + port_str);
     rd_service::add_connection(conn);
+    rd_service::stop();
 }
 
 TEST(ConnectionTest, uds) {
@@ -64,6 +65,7 @@ TEST(ConnectionTest, uds) {
 
     using redis_async::rd_service;
     rd_service::add_connection(std::string("uds=unix://") + redis_socket.filename);
+    rd_service::stop();
 }
 
 TEST(ConnectionTest, conn_err) {
@@ -83,4 +85,5 @@ TEST(ConnectionTest, conn_err) {
                  redis_async::error::connection_error);
     ASSERT_THROW(rd_service::add_connection("main=udp://192.168.0.10"_redis, 0),
                  redis_async::error::connection_error);
+    rd_service::stop();
 }

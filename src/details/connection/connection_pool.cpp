@@ -5,6 +5,7 @@
 #include <redis_async/details/connection/base_connection.hpp>
 #include <redis_async/details/connection/connection_pool.hpp>
 #include <redis_async/details/connection/events.hpp>
+#include <redis_async/details/protocol/serializer.hpp>
 
 #include <mutex>
 #include <queue>
@@ -164,16 +165,21 @@ namespace redis_async {
                     return;
                 }
                 connection_ptr conn;
+                using serializer_t = command_serializer_visitor<std::string>;
+                events::execute evt{"", conn_cb, err};
+                boost::apply_visitor(serializer_t(evt.buff), cmd);
+
                 if (get_idle_connection(conn)) {
                     LOG4CXX_INFO(logger, "Connection to " << alias() << " is idle")
-                    conn->execute({std::move(cmd), conn_cb, err});
+                    conn->execute(std::move(evt));
                 } else {
                     if (!closed_ && connections_.size() < pool_size_) {
                         create_new_connection(pool);
                     }
-                    enqueue_event({std::move(cmd), conn_cb, err});
+                    enqueue_event(std::move(evt));
                 }
             }
+
             void close(const simple_callback &close_cb) {
                 bool expected = false;
                 if (closed_.compare_exchange_strong(expected, true)) {

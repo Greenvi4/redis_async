@@ -1,9 +1,11 @@
 //
-// Created by niko on 29.06.2021.
+// Created by niko on 07.07.2021.
 //
 
-#include <redis_async/details/protocol/message.hpp>
-#include <boost/asio/buffer.hpp>
+#ifndef REDIS_ASYNC_SERIALIZER_HPP
+#define REDIS_ASYNC_SERIALIZER_HPP
+
+#include <redis_async/details/protocol/command.hpp>
 
 namespace redis_async {
     namespace details {
@@ -39,25 +41,30 @@ namespace redis_async {
             inline static void serialize(DynamicBuffer &buff, const single_command_t &cmd) {
                 buff.reserve(command_size(cmd));
                 constexpr std::size_t buff_sz = 64;
-                using namespace boost::asio;
                 char data[buff_sz];
                 std::size_t total = snprintf(data, buff_sz, "*%zu\r\n", cmd.arguments.size());
                 auto it = std::copy(data, data + total, std::back_inserter(buff));
 
                 for (const auto &arg : cmd.arguments) {
                     auto bytes = snprintf(data, buff_sz, "$%zu\r\n", arg.size());
-                    it = std::copy(data, data + bytes, it);
+                    std::copy(data, data + bytes, it);
                     total += bytes;
 
                     if (!arg.empty()) {
-                        it = std::copy(arg.begin(), arg.end(), it);
+                        std::copy(arg.begin(), arg.end(), it);
                         total += arg.size();
                     }
                     it = '\r';
                     it = '\n';
                     total += terminator_size;
                 }
-                //                buff.commit(total);
+            }
+
+            template <typename DynamicBuffer>
+            inline static void serialize(DynamicBuffer &buff, const command_container_t &cont) {
+                for (const auto &cmd : cont) {
+                    Protocol::serialize(buff, cmd);
+                }
             }
         };
 
@@ -71,36 +78,13 @@ namespace redis_async {
                 : buff_{buff} {
             }
 
-            void operator()(const single_command_t &value) const {
+            template<typename T>
+            void operator()(const T &value) const {
                 Protocol::serialize(buff_, value);
             }
-
-            void operator()(const command_container_t &value) const {
-                for (const auto &cmd : value) {
-                    Protocol::serialize(buff_, cmd);
-                }
-            }
-
-        private:
         };
-
-        message::message(const command_wrapper_t &command) {
-            payload.reserve(256);
-            using serializer_t = command_serializer_visitor<buffer_type>;
-            boost::apply_visitor(serializer_t(payload), command);
-        }
-
-        message::message(message &&other) noexcept
-            : payload{::std::move(other.payload)} {
-        }
-
-        std::size_t message::size() const {
-            return payload.size();
-        }
-
-        message::const_range message::buffer() const {
-            return std::make_pair(payload.begin(), payload.end());
-        }
 
     } // namespace details
 } // namespace redis_async
+
+#endif // REDIS_ASYNC_SERIALIZER_HPP

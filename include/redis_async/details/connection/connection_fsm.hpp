@@ -17,8 +17,9 @@
 #include <redis_async/details/connection/base_connection.hpp>
 #include <redis_async/details/connection/events.hpp>
 #include <redis_async/details/connection/handler_parse_result.hpp>
-#include <redis_async/details/protocol/message.hpp>
+#include <redis_async/details/protocol/command.hpp>
 #include <redis_async/details/protocol/parser.hpp>
+#include <redis_async/details/protocol/serializer.hpp>
 #include <redis_async/error.hpp>
 
 namespace redis_async {
@@ -63,7 +64,7 @@ namespace redis_async {
 
             struct disconnect {
                 template <typename SourceState, typename TargetState>
-                void operator()(events::terminate , connection_fsm_type &fsm, SourceState &,
+                void operator()(events::terminate, connection_fsm_type &fsm, SourceState &,
                                 TargetState &) {
                     LOG4CXX_INFO(logger, "Conn#" << fsm.number() << ": connection: disconnect")
                     fsm.close_transport();
@@ -111,7 +112,7 @@ namespace redis_async {
                     fsm.connect_transport(opts);
                 }
 
-                void on_exit(events::complete , connection_fsm_type &fsm) {
+                void on_exit(events::complete, connection_fsm_type &fsm) {
                     LOG4CXX_TRACE(logger, "Conn#" << fsm.number()
                                                   << ": state[connecting]: exit by complete")
                     fsm.start_read();
@@ -172,7 +173,7 @@ namespace redis_async {
                     LOG4CXX_TRACE(logger,
                                   "Conn#" << fsm.number() << ": state[query]: entry by execute")
                     query_ = evt;
-                    fsm.send({query_.cmd});
+                    fsm.send(std::move(query_.buff));
                 }
 
                 template <typename Event>
@@ -268,17 +269,16 @@ namespace redis_async {
 
                 conn_opts_ = opts;
                 auto _this = shared_base::shared_from_this();
-                transport_.connect_async(conn_opts_, [_this](asio_config::error_code ec) {
-                    _this->handle_connect(ec);
-                });
+                transport_.connect_async(
+                    conn_opts_, [_this](asio_config::error_code ec) { _this->handle_connect(ec); });
             }
 
             void start_read() {
                 auto _this = shared_base::shared_from_this();
-                transport_.async_read(incoming_, [_this](asio_config::error_code ec,
-                                                         size_t bytes_transferred) {
-                    _this->handle_read(ec, bytes_transferred);
-                });
+                transport_.async_read(
+                    incoming_, [_this](asio_config::error_code ec, size_t bytes_transferred) {
+                        _this->handle_read(ec, bytes_transferred);
+                    });
             }
 
             void send_startup_message() {
@@ -287,13 +287,14 @@ namespace redis_async {
                     return;
                 }
                 single_command_t cmd{"AUTH", conn_opts_.password};
-                send({cmd});
+                events::execute::Buffer buff;
+                Protocol::serialize(buff, cmd);
+                send(std::move(buff));
             }
 
-            void send(message &&m, const asio_io_handler &handler = asio_io_handler()) {
+            void send(events::execute::Buffer &&m, const asio_io_handler &handler = asio_io_handler()) {
                 if (transport_.connected()) {
-                    auto msg = ::std::make_shared<message>(::std::move(m));
-                    auto data_range = msg->buffer();
+                    auto msg = ::std::make_shared<std::string>(::std::move(m));
                     auto _this = shared_base::shared_from_this();
                     auto write_handler = [_this, handler, msg](asio_config::error_code ec,
                                                                size_t sz) {
@@ -302,10 +303,8 @@ namespace redis_async {
                         else
                             _this->handle_write(ec, sz);
                     };
-                    transport_.async_write(
-                        boost::asio::buffer(&*data_range.first,
-                                            data_range.second - data_range.first),
-                        write_handler);
+                    transport_.async_write(boost::asio::buffer(msg->data(), msg->size()),
+                                           write_handler);
                 }
             }
 

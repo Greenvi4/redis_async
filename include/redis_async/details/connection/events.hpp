@@ -7,7 +7,6 @@
 
 #include <redis_async/common.hpp>
 #include <redis_async/rd_types.hpp>
-#include <redis_async/details/protocol/command.hpp>
 
 namespace redis_async {
     namespace details {
@@ -15,7 +14,9 @@ namespace redis_async {
         namespace events {
 
             struct execute {
-                command_wrapper_t cmd;
+                using Buffer = std::string;
+
+                Buffer buff;
                 query_result_callback result;
                 error_callback error;
             };
