@@ -52,6 +52,19 @@ namespace redis_async {
                              std::chrono::milliseconds ttl);
 
         single_command_t get(StringView key);
+
+        single_command_t mset(std::initializer_list<std::pair<StringView, StringView>> kv);
+        single_command_t mget(std::initializer_list<StringView> keys);
+
+        single_command_t hset(StringView key,
+                              std::initializer_list<std::pair<StringView, StringView>> kv);
+        single_command_t hdel(StringView key, std::initializer_list<StringView> keys);
+        single_command_t hget(StringView key, StringView field);
+        single_command_t hkeys(StringView key);
+        single_command_t hmset(StringView key,
+                               std::initializer_list<std::pair<StringView, StringView>> kv);
+        single_command_t hmget(StringView key, std::initializer_list<StringView> fields);
+
     } // namespace cmd
 
 } // namespace redis_async

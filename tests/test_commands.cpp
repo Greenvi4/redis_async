@@ -232,6 +232,198 @@ TEST(CommandsTest, set_get) {
     rd_service::run();
 }
 
+TEST(CommandsTest, mset_mget) {
+    uint16_t port = ep::get_random();
+    auto port_str = boost::lexical_cast<std::string>(port);
+    auto server = ts::make_server({"redis-server", "--port", port_str});
+    ep::wait_port(port);
+
+    using redis_async::rd_service;
+    rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
+
+    boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
+    timer.async_wait([&](boost::system::error_code ec) {
+        if (ec)
+            return;
+        rd_service::stop();
+        FAIL() << "Test timer expired";
+    });
+
+    using redis_async::result_t;
+    namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
+
+    rd_service::execute(
+        "tcp"_rd, cmd::mset({{"key1", "value1"}, {"key2", "value2"}, {"key3", "value3"}}),
+        [&](const result_t &res) { EXPECT_EQ("OK", boost::get<redis_async::string_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::mset({{"key1", ""}, {"key2", ""}, {"key3", ""}}),
+        [&](const result_t &res) { EXPECT_EQ("OK", boost::get<redis_async::string_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::mget({"key1", "key2", "key3"}),
+        [&](const result_t &res) {
+            auto values = boost::get<redis_async::array_holder_t>(res);
+            EXPECT_EQ(values.elements.size(), 3);
+            EXPECT_EQ("", boost::get<redis_async::string_t>(values.elements[0]));
+            EXPECT_EQ("", boost::get<redis_async::string_t>(values.elements[1]));
+            EXPECT_EQ("", boost::get<redis_async::string_t>(values.elements[2]));
+            timer.cancel();
+            rd_service::stop();
+        },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    ASSERT_THROW(
+        rd_service::execute(
+            "tcp"_rd, cmd::mset({}),
+            [&](const result_t &res) { EXPECT_EQ("OK", boost::get<redis_async::string_t>(res)); },
+            [&](const error::rd_error &err) {
+                timer.cancel();
+                rd_service::stop();
+                FAIL() << err.what();
+            }),
+        error::client_error);
+
+    ASSERT_THROW(rd_service::execute(
+                     "tcp"_rd, cmd::mget({}), [&](const result_t &res) {},
+                     [&](const error::rd_error &err) {
+                         timer.cancel();
+                         rd_service::stop();
+                         FAIL() << err.what();
+                     }),
+                 error::client_error);
+
+    rd_service::run();
+}
+
+TEST(CommandsTest, hash) {
+    uint16_t port = ep::get_random();
+    auto port_str = boost::lexical_cast<std::string>(port);
+    auto server = ts::make_server({"redis-server", "--port", port_str});
+    ep::wait_port(port);
+
+    using redis_async::rd_service;
+    rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
+
+    boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
+    timer.async_wait([&](boost::system::error_code ec) {
+        if (ec)
+            return;
+        rd_service::stop();
+        FAIL() << "Test timer expired";
+    });
+
+    using redis_async::result_t;
+    namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
+
+    rd_service::execute(
+        "tcp"_rd, cmd::hset("hash", {{"key1", "value1"}, {"key2", "value2"}, {"key3", "value3"}}),
+        [&](const result_t &res) { EXPECT_EQ(3, boost::get<redis_async::int_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::hget("hash", "key1"),
+        [&](const result_t &res) { EXPECT_EQ("value1", boost::get<redis_async::string_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::hget("hash", "key2"),
+        [&](const result_t &res) { EXPECT_EQ("value2", boost::get<redis_async::string_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::hdel("hash", {"key3", "does_not_exists"}),
+        [&](const result_t &res) { EXPECT_EQ(1, boost::get<redis_async::int_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::hget("hash", "key3"),
+        [&](const result_t &res) { EXPECT_NO_THROW(boost::get<redis_async::nil_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::hkeys("hash"),
+        [&](const result_t &res) {
+            auto values = boost::get<redis_async::array_holder_t>(res);
+            EXPECT_EQ(values.elements.size(), 2);
+            EXPECT_EQ("key1", boost::get<redis_async::string_t>(values.elements[0]));
+            EXPECT_EQ("key2", boost::get<redis_async::string_t>(values.elements[1]));
+        },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd,
+        cmd::hmset(
+            "hash",
+            {{"key1", "another_value1"}, {"key2", "another_value2"}, {"key3", "another_value3"}}),
+        [&](const result_t &res) { EXPECT_EQ("OK", boost::get<redis_async::string_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::hmget("hash", {"key1", "key2", "key3", "doe_not_exists"}),
+        [&](const result_t &res) {
+            auto values = boost::get<redis_async::array_holder_t>(res);
+            EXPECT_EQ(values.elements.size(), 4);
+            EXPECT_EQ("another_value1", boost::get<redis_async::string_t>(values.elements[0]));
+            EXPECT_EQ("another_value2", boost::get<redis_async::string_t>(values.elements[1]));
+            EXPECT_EQ("another_value3", boost::get<redis_async::string_t>(values.elements[2]));
+            EXPECT_NO_THROW(boost::get<redis_async::nil_t>(values.elements[3]));
+            timer.cancel();
+            rd_service::stop();
+        },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::run();
+}
+
 TEST(CommandsTest, hadnle_exceptions) {
 
     uint16_t port = ep::get_random();

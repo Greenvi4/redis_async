@@ -71,5 +71,64 @@ namespace redis_async {
             return {"GET", key};
         }
 
+        single_command_t mset(std::initializer_list<std::pair<StringView, StringView>> kv) {
+            if (kv.size() == 0)
+                throw error::client_error("MSET could not run without parameters");
+
+            CmdArgs args;
+            args << "MSET" << std::make_pair(kv.begin(), kv.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t mget(std::initializer_list<StringView> keys) {
+            if (keys.size() == 0)
+                throw error::client_error("MGET could not run without parameters");
+            CmdArgs args;
+            args << "MGET" << std::make_pair(keys.begin(), keys.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t hset(StringView key,
+                              std::initializer_list<std::pair<StringView, StringView>> kv) {
+            if (kv.size() == 0)
+                throw error::client_error("HSET could not run without [field, value]");
+            CmdArgs args;
+            args << "HSET" << key << std::make_pair(kv.begin(), kv.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t hdel(StringView key, std::initializer_list<StringView> keys) {
+            if (keys.size() == 0)
+                throw error::client_error("HDEL could not run without keys");
+            CmdArgs args;
+            args << "HDEL" << key << std::make_pair(keys.begin(), keys.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t hget(StringView key, StringView field) {
+            return {"HGET", key, field};
+        }
+
+        single_command_t hkeys(StringView key) {
+            return {"HKEYS", key};
+        }
+
+        single_command_t hmset(StringView key,
+                               std::initializer_list<std::pair<StringView, StringView>> kv) {
+            if (kv.size() == 0)
+                throw error::client_error("HMSET could not run without fields/values");
+            CmdArgs args;
+            args << "HMSET" << key << std::make_pair(kv.begin(), kv.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t hmget(StringView key, std::initializer_list<StringView> fields) {
+            if (fields.size() == 0)
+                throw error::client_error("HMGET could not run without fields");
+            CmdArgs args;
+            args << "HMGET" << key << std::make_pair(fields.begin(), fields.end());
+            return std::move(args.cmd());
+        }
+
     } // namespace cmd
 } // namespace redis_async
