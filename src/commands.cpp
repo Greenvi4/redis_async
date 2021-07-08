@@ -171,5 +171,64 @@ namespace redis_async {
             args << "HMGET" << key << std::make_pair(fields.begin(), fields.end());
             return std::move(args.cmd());
         }
+
+        single_command_t lpush(StringView key, std::initializer_list<StringView> elements) {
+            if (elements.size() == 0)
+                throw error::client_error("LPUSH could not run without elements");
+            CmdArgs args;
+            args << "LPUSH" << key << std::make_pair(elements.begin(), elements.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t rpush(StringView key, std::initializer_list<StringView> elements) {
+            if (elements.size() == 0)
+                throw error::client_error("RPUSH could not run without elements");
+            CmdArgs args;
+            args << "RPUSH" << key << std::make_pair(elements.begin(), elements.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t lpop(StringView key) {
+            return {"LPOP", key};
+        }
+
+        single_command_t rpop(StringView key) {
+            return {"RPOP", key};
+        }
+
+        single_command_t llen(StringView key) {
+            return {"LLEN", key};
+        }
+
+        single_command_t lrange(StringView key, int start, int stop) {
+            CmdArgs args;
+            args << "LRANGE" << key << start << stop;
+            return std::move(args.cmd());
+        }
+
+        single_command_t lset(StringView key, int index, StringView element) {
+            CmdArgs args;
+            args << "LSET" << key << index << element;
+            return std::move(args.cmd());
+        }
+
+        single_command_t lrem(StringView key, int count, StringView element) {
+            CmdArgs args;
+            args << "LREM" << key << count << element;
+            return std::move(args.cmd());
+        }
+
+        single_command_t lindex(StringView key, int index) {
+            CmdArgs args;
+            args << "LINDEX" << key << index;
+            return std::move(args.cmd());
+        }
+
+        single_command_t ltrim(StringView key, int start, int stop) {
+            CmdArgs args;
+            args << "LTRIM" << key << start << stop;
+            return std::move(args.cmd());
+        }
+
     } // namespace cmd
 } // namespace redis_async

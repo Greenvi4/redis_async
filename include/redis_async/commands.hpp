@@ -70,6 +70,18 @@ namespace redis_async {
                                std::initializer_list<std::pair<StringView, StringView>> kv);
         single_command_t hmget(StringView key, std::initializer_list<StringView> fields);
 
+        single_command_t lpush(StringView key, std::initializer_list<StringView> elements);
+        single_command_t rpush(StringView key, std::initializer_list<StringView> elements);
+        single_command_t lpop(StringView key);
+        single_command_t rpop(StringView key);
+        single_command_t llen(StringView key);
+        single_command_t lrange(StringView key, int start, int stop);
+        single_command_t lset(StringView key, int index, StringView element);
+        single_command_t lrem(StringView key, int count, StringView element);
+        single_command_t lindex(StringView key, int index);
+        single_command_t ltrim(StringView key, int start, int stop);
+
+
     } // namespace cmd
 
 } // namespace redis_async
