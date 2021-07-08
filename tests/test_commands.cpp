@@ -21,6 +21,7 @@ TEST(CommandsTest, ping) {
 
     using redis_async::rd_service;
     namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
     using redis_async::result_t;
 
     rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
@@ -33,8 +34,8 @@ TEST(CommandsTest, ping) {
         FAIL() << "Test timer expired";
     });
 
-    rd_service::ping(
-        "tcp"_rd,
+    rd_service::execute(
+        "tcp"_rd, cmd::ping(),
         [](const result_t &res) { EXPECT_EQ("PONG", boost::get<redis_async::string_t>(res)); },
         [&](const error::rd_error &err) {
             timer.cancel();
@@ -43,8 +44,8 @@ TEST(CommandsTest, ping) {
         });
 
     const std::string msg = "Hello, World!";
-    rd_service::ping(
-        "tcp"_rd, msg,
+    rd_service::execute(
+        "tcp"_rd, cmd::ping(msg),
         [msg](const result_t &res) { EXPECT_EQ(msg, boost::get<redis_async::string_t>(res)); },
         [&](const error::rd_error &err) {
             timer.cancel();
@@ -52,8 +53,8 @@ TEST(CommandsTest, ping) {
             FAIL() << err.what();
         });
 
-    rd_service::ping(
-        "tcp"_rd, "",
+    rd_service::execute(
+        "tcp"_rd, cmd::ping(""),
         [&](const result_t &res) {
             EXPECT_EQ("", boost::get<redis_async::string_t>(res));
             timer.cancel();
@@ -87,10 +88,11 @@ TEST(CommandsTest, echo) {
 
     using redis_async::result_t;
     namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
     const std::string msg = "Hello, World!";
 
-    rd_service::echo(
-        "tcp"_rd, msg,
+    rd_service::execute(
+        "tcp"_rd, cmd::echo(msg),
         [&](const result_t &res) { EXPECT_EQ(msg, boost::get<redis_async::string_t>(res)); },
         [&](const error::rd_error &err) {
             timer.cancel();
@@ -98,8 +100,8 @@ TEST(CommandsTest, echo) {
             FAIL() << err.what();
         });
 
-    rd_service::echo(
-        "tcp"_rd, "",
+    rd_service::execute(
+        "tcp"_rd, cmd::echo(""),
         [&](const result_t &res) {
             EXPECT_EQ("", boost::get<redis_async::string_t>(res));
             timer.cancel();
@@ -133,12 +135,13 @@ TEST(CommandsTest, set_get) {
 
     using redis_async::result_t;
     namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
 
     const std::string key = "some_key";
     const std::string value = "some_value";
 
-    rd_service::set(
-        "tcp"_rd, key, value,
+    rd_service::execute(
+        "tcp"_rd, cmd::set(key, value),
         [&](const result_t &res) { EXPECT_EQ("OK", boost::get<redis_async::string_t>(res)); },
         [&](const error::rd_error &err) {
             timer.cancel();
@@ -146,8 +149,8 @@ TEST(CommandsTest, set_get) {
             FAIL() << err.what();
         });
 
-    rd_service::set(
-        "tcp"_rd, key, value, redis_async::UpdateType::exist,
+    rd_service::execute(
+        "tcp"_rd, cmd::set(key, value, redis_async::UpdateType::exist),
         [&](const result_t &res) { EXPECT_EQ("OK", boost::get<redis_async::string_t>(res)); },
         [&](const error::rd_error &err) {
             timer.cancel();
@@ -155,8 +158,8 @@ TEST(CommandsTest, set_get) {
             FAIL() << err.what();
         });
 
-    rd_service::set(
-        "tcp"_rd, key, value, redis_async::UpdateType::not_exist,
+    rd_service::execute(
+        "tcp"_rd, cmd::set(key, value, redis_async::UpdateType::not_exist),
         [&](const result_t &res) { EXPECT_NO_THROW(boost::get<redis_async::nil_t>(res)); },
         [&](const error::rd_error &err) {
             timer.cancel();
@@ -165,8 +168,8 @@ TEST(CommandsTest, set_get) {
         });
 
     ASSERT_THROW(
-        rd_service::set(
-            "tcp"_rd, key, value, static_cast<redis_async::UpdateType>(100),
+        rd_service::execute(
+            "tcp"_rd, cmd::set(key, value, static_cast<redis_async::UpdateType>(100)),
             [&](const result_t &res) { EXPECT_EQ("OK", boost::get<redis_async::string_t>(res)); },
             [&](const error::rd_error &err) {
                 timer.cancel();
@@ -177,8 +180,8 @@ TEST(CommandsTest, set_get) {
 
     using std::chrono::milliseconds;
 
-    rd_service::set(
-        "tcp"_rd, "expire_key_1", value, milliseconds(120),
+    rd_service::execute(
+        "tcp"_rd, cmd::set("expire_key_1", value, milliseconds(120)),
         [&](const result_t &res) { EXPECT_EQ("OK", boost::get<redis_async::string_t>(res)); },
         [&](const error::rd_error &err) {
             timer.cancel();
@@ -186,30 +189,26 @@ TEST(CommandsTest, set_get) {
             FAIL() << err.what();
         });
 
-    rd_service::set(
-        "tcp"_rd, "expire_key_2", value, milliseconds(0),
-        [&](const result_t &res) {
+    rd_service::execute(
+        "tcp"_rd, cmd::set("expire_key_2", value, milliseconds(0)),
+        [&](const result_t &res) { EXPECT_EQ("OK", boost::get<redis_async::string_t>(res)); },
+        [&](const error::rd_error &err) {
             timer.cancel();
             rd_service::stop();
-            FAIL() << "Unexpected result type: " << res;
-        },
-        [&](const error::rd_error &err) {
-            EXPECT_EQ(err.what(), std::string("ERR invalid expire time in set"));
+            FAIL() << err.what();
         });
 
-    rd_service::set(
-        "tcp"_rd, "expire_key_3", value, milliseconds(-100),
-        [&](const result_t &res) {
+    rd_service::execute(
+        "tcp"_rd, cmd::set("expire_key_2", value, milliseconds(-100)),
+        [&](const result_t &res) { EXPECT_EQ("OK", boost::get<redis_async::string_t>(res)); },
+        [&](const error::rd_error &err) {
             timer.cancel();
             rd_service::stop();
-            FAIL() << "Unexpected result type: " << res;
-        },
-        [&](const error::rd_error &err) {
-            EXPECT_EQ(err.what(), std::string("ERR invalid expire time in set"));
+            FAIL() << err.what();
         });
 
-    rd_service::get(
-        "tcp"_rd, key,
+    rd_service::execute(
+        "tcp"_rd, cmd::get(key),
         [&](const result_t &res) { EXPECT_EQ(value, boost::get<redis_async::string_t>(res)); },
         [&](const error::rd_error &err) {
             timer.cancel();
@@ -217,8 +216,8 @@ TEST(CommandsTest, set_get) {
             FAIL() << err.what();
         });
 
-    rd_service::get(
-        "tcp"_rd, "another_key",
+    rd_service::execute(
+        "tcp"_rd, cmd::get("another_key"),
         [&](const result_t &res) {
             EXPECT_NO_THROW(boost::get<redis_async::nil_t>(res));
             timer.cancel();
@@ -253,9 +252,10 @@ TEST(CommandsTest, hadnle_exceptions) {
 
     using redis_async::result_t;
     namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
 
-    rd_service::get(
-        "tcp"_rd, "some_wrong_key",
+    rd_service::execute(
+        "tcp"_rd, cmd::get("some_wrong_key"),
         [](const result_t &res) { boost::get<redis_async::string_t>(res); },
         [&](const error::rd_error &) {
             timer.cancel();

@@ -9,8 +9,8 @@
 #include <memory>
 
 #include <redis_async/asio_config.hpp>
+#include <redis_async/commands.hpp>
 #include <redis_async/common.hpp>
-#include <redis_async/details/protocol/command.hpp>
 
 namespace redis_async {
     namespace details {
@@ -31,8 +31,8 @@ namespace redis_async {
             ~connection_pool();
 
             rdalias const &alias() const;
-            void get_connection(command_wrapper_t cmd, const query_result_callback &conn_cb,
-                                const error_callback &err);
+            void get_connection(command_wrapper_t &&cmd, query_result_callback &&conn_cb,
+                                error_callback &&err);
             void close(simple_callback);
 
         private:

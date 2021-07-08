@@ -20,19 +20,6 @@ namespace redis_async {
             return _mtx;
         }
 
-        std::string set_update_type(UpdateType udp) {
-            switch (udp) {
-            case UpdateType::exist:
-                return "XX";
-            case UpdateType::not_exist:
-                return "NX";
-            default:
-                break;
-            }
-            throw error::client_error("Invalid update type " +
-                                      std::to_string(static_cast<int>(udp)));
-        }
-
     } // namespace
 
     void rd_service::add_connection(const std::string &connection_string, optional_size pool_size) {
@@ -62,68 +49,10 @@ namespace redis_async {
         return impl()->io_service();
     }
 
-    void rd_service::ping(const rdalias &alias, const query_result_callback &result,
-                          const error_callback &error) {
-        // TODO Wrap callbacks in strands
-        impl()->get_connection(alias, "PING", result, error);
-    }
-
-    void rd_service::ping(const rdalias &alias, boost::string_ref msg,
-                          const query_result_callback &result, const error_callback &error) {
-        // TODO Wrap callbacks in strands
-        using details::single_command_t;
-        impl()->get_connection(alias, single_command_t{"PING", msg}, result, error);
-    }
-
-    void rd_service::echo(const rdalias &alias, boost::string_ref msg,
-                          const query_result_callback &result, const error_callback &error) {
-        // TODO Wrap callbacks in strands
-        using details::single_command_t;
-        impl()->get_connection(alias, single_command_t{"ECHO", msg}, result, error);
-    }
-
-    void rd_service::set(const rdalias &alias, boost::string_ref key, boost::string_ref value,
-                         const query_result_callback &result, const error_callback &error) {
-        // TODO Wrap callbacks in strands
-        using details::single_command_t;
-        impl()->get_connection(alias, single_command_t{"SET", key, value}, result, error);
-    }
-
-    void rd_service::set(const rdalias &alias, boost::string_ref key, boost::string_ref value,
-                         UpdateType udp, const query_result_callback &result,
-                         const error_callback &error) {
-        // TODO Wrap callbacks in strands
-        using details::single_command_t;
-        impl()->get_connection(alias, single_command_t{"SET", key, value, set_update_type(udp)},
-                               result, error);
-    }
-
-    void rd_service::set(const rdalias &alias, boost::string_ref key, boost::string_ref value,
-                         const std::chrono::milliseconds &ttl, const query_result_callback &result,
-                         const error_callback &error) {
-        // TODO Wrap callbacks in strands
-        using details::single_command_t;
-        impl()->get_connection(
-            alias, single_command_t{"SET", key, value, "PX", std::to_string(ttl.count())}, result,
-            error);
-    }
-
-    void rd_service::set(const rdalias &alias, boost::string_ref key, boost::string_ref value,
-                         UpdateType udp, const std::chrono::milliseconds &ttl,
-                         const query_result_callback &result, const error_callback &error) {
-        // TODO Wrap callbacks in strands
-        using details::single_command_t;
-        impl()->get_connection(alias,
-                               single_command_t{"SET", key, value, "PX",
-                                                std::to_string(ttl.count()), set_update_type(udp)},
-                               result, error);
-    }
-
-    void rd_service::get(const rdalias &alias, boost::string_ref key,
-                         const query_result_callback &result, const error_callback &error) {
-        // TODO Wrap callbacks in strands
-        using details::single_command_t;
-        impl()->get_connection(alias, single_command_t{"GET", key}, result, error);
+    void rd_service::execute(rdalias &&alias, single_command_t &&cmd,
+                             query_result_callback &&result, error_callback &&error) {
+        impl()->get_connection(std::move(alias), std::move(cmd), std::move(result),
+                               std::move(error));
     }
 
     rd_service::pimpl &rd_service::impl_ptr() {

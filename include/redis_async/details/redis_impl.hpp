@@ -5,9 +5,9 @@
 #ifndef REDIS_ASYNC_REDIS_IMPL_HPP
 #define REDIS_ASYNC_REDIS_IMPL_HPP
 
-#include <redis_async/common.hpp>
 #include <redis_async/asio_config.hpp>
-#include <redis_async/details/protocol/command.hpp>
+#include <redis_async/commands.hpp>
+#include <redis_async/common.hpp>
 
 #include <boost/noncopyable.hpp>
 #include <map>
@@ -30,8 +30,8 @@ namespace redis_async {
                                 optional_size pool_size = optional_size());
             void add_connection(const connection_options &options,
                                 optional_size pool_size = optional_size());
-            void get_connection(rdalias const &alias, command_wrapper_t cmd,
-                                const query_result_callback &conn_cb, const error_callback &err);
+            void get_connection(rdalias &&alias, command_wrapper_t &&cmd,
+                                query_result_callback &&conn_cb, error_callback &&err);
 
             void run();
             void stop();

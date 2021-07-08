@@ -7,7 +7,7 @@
 
 namespace redis_async {
 
-    enum class UpdateType { exist, not_exist };
+    enum class UpdateType { exist, not_exist, always };
 
 } // namespace redis_async
 

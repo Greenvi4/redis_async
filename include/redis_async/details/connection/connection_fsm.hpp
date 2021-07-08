@@ -17,7 +17,6 @@
 #include <redis_async/details/connection/base_connection.hpp>
 #include <redis_async/details/connection/events.hpp>
 #include <redis_async/details/connection/handler_parse_result.hpp>
-#include <redis_async/details/protocol/command.hpp>
 #include <redis_async/details/protocol/parser.hpp>
 #include <redis_async/details/protocol/serializer.hpp>
 #include <redis_async/error.hpp>

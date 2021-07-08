@@ -158,8 +158,8 @@ namespace redis_async {
                 erase_connection(c);
                 clear_queue(ec);
             }
-            void get_connection(command_wrapper_t cmd, query_result_callback const &conn_cb,
-                                error_callback const &err, connection_pool_ptr pool) {
+            void get_connection(command_wrapper_t &&cmd, query_result_callback &&conn_cb,
+                                error_callback &&err, connection_pool_ptr &&pool) {
                 if (closed_) {
                     err(error::connection_error("Connection pool is closed"));
                     return;
@@ -247,11 +247,12 @@ namespace redis_async {
             pimpl_->connection_error(std::move(c), ec);
         }
 
-        void connection_pool::get_connection(command_wrapper_t cmd,
-                                             query_result_callback const &conn_cb,
-                                             error_callback const &err) {
+        void connection_pool::get_connection(command_wrapper_t &&cmd,
+                                             query_result_callback &&conn_cb,
+                                             error_callback &&err) {
             auto _this = shared_from_this();
-            pimpl_->get_connection(std::move(cmd), conn_cb, err, _this);
+            pimpl_->get_connection(std::move(cmd), std::move(conn_cb), std::move(err),
+                                   std::move(_this));
         }
 
         void connection_pool::close(simple_callback close_cb) {

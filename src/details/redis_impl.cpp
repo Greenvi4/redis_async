@@ -2,9 +2,9 @@
 // Created by niko on 10.06.2021.
 //
 
-#include <redis_async/details/redis_impl.hpp>
 #include <redis_async/details/connection/base_connection.hpp>
 #include <redis_async/details/connection/connection_pool.hpp>
+#include <redis_async/details/redis_impl.hpp>
 
 #include <utility>
 
@@ -48,9 +48,8 @@ namespace redis_async {
             add_pool(options, std::move(pool_size));
         }
 
-        void redis_impl::get_connection(rdalias const &alias, command_wrapper_t cmd,
-                                        const query_result_callback &conn_cb,
-                                        const error_callback &err) {
+        void redis_impl::get_connection(rdalias &&alias, command_wrapper_t &&cmd,
+                                        query_result_callback &&conn_cb, error_callback &&err) {
             if (state_ != running)
                 throw error::connection_error("Database service is not running");
 
@@ -58,7 +57,7 @@ namespace redis_async {
                 throw error::connection_error("Database alias '" + alias + "' is not registered");
             }
             connection_pool_ptr pool = connections_[alias];
-            pool->get_connection(std::move(cmd), conn_cb, err);
+            pool->get_connection(std::move(cmd), std::move(conn_cb), std::move(err));
         }
 
         void redis_impl::run() {

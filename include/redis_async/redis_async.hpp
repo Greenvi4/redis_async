@@ -7,9 +7,8 @@
 
 #include <redis_async/asio_config.hpp>
 #include <redis_async/command_options.hpp>
+#include <redis_async/commands.hpp>
 #include <redis_async/common.hpp>
-
-#include <boost/utility/string_ref.hpp>
 
 namespace redis_async {
 
@@ -42,30 +41,8 @@ namespace redis_async {
 
         static asio_config::io_service_ptr io_service();
 
-        static void ping(const rdalias &alias, const query_result_callback &result,
-                         const error_callback &error);
-        static void ping(const rdalias &alias, boost::string_ref msg,
-                         const query_result_callback &result, const error_callback &error);
-        static void echo(const rdalias &alias, boost::string_ref msg,
-                         const query_result_callback &result, const error_callback &error);
-
-        static void set(const rdalias &alias,
-                        boost::string_ref key, boost::string_ref value,
-                        const query_result_callback &result, const error_callback &error);
-        static void set(const rdalias &alias,
-                        boost::string_ref key, boost::string_ref value, UpdateType udp,
-                        const query_result_callback &result, const error_callback &error);
-        static void set(const rdalias &alias,
-                        boost::string_ref key, boost::string_ref value,
-                        const std::chrono::milliseconds &ttl,
-                        const query_result_callback &result, const error_callback &error);
-        static void set(const rdalias &alias,
-                        boost::string_ref key, boost::string_ref value, UpdateType udp,
-                        const std::chrono::milliseconds &ttl,
-                        const query_result_callback &result, const error_callback &error);
-
-        static void get(const rdalias &alias, boost::string_ref key,
-                        const query_result_callback &result, const error_callback &error);
+        static void execute(rdalias &&alias, single_command_t &&cmd,
+                             query_result_callback &&result, error_callback &&error);
 
     private:
         // No instances

@@ -1,8 +1,8 @@
 //
 // Created by niko on 02.07.2021.
 //
+#include <redis_async/commands.hpp>
 #include <redis_async/details/protocol/serializer.hpp>
-#include <redis_async/details/protocol/command.hpp>
 
 #include <redis_async/details/protocol/parser.hpp>
 
@@ -12,8 +12,8 @@
 #include <gtest/gtest.h>
 
 TEST(ParserTests, raw_cmd) {
-    using redis_async::details::command_container_t;
-    using redis_async::details::single_command_t;
+    using redis_async::command_container_t;
+    using redis_async::single_command_t;
     using Buffer = std::string;
     using Protocol = redis_async::details::Protocol;
 
@@ -26,7 +26,7 @@ TEST(ParserTests, raw_cmd) {
         ASSERT_EQ(result, expected);
     }
     {
-        single_command_t cmd("HSET", "key", "value1", "", "value2", "");
+        single_command_t cmd= {"HSET", "key", "value1", "", "value2", ""};
         Buffer result;
         Protocol::serialize(result, cmd);
         const std::string expected("*6\r\n$4\r\nHSET\r\n$3\r\nkey\r\n$6\r\nvalue1\r\n$0\r\n\r\n$"

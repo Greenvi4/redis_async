@@ -5,7 +5,7 @@
 #ifndef REDIS_ASYNC_SERIALIZER_HPP
 #define REDIS_ASYNC_SERIALIZER_HPP
 
-#include <redis_async/details/protocol/command.hpp>
+#include <redis_async/commands.hpp>
 
 namespace redis_async {
     namespace details {

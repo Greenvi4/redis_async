@@ -76,14 +76,16 @@ TEST(ConnectionTest, conn_err) {
 
     using redis_async::rd_service;
     using redis_async::result_t;
+    namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
 
-    ASSERT_THROW(rd_service::ping(
-                     "wrong_name_of_service"_rd, [](const result_t &) {},
-                     [&](const redis_async::error::rd_error &err) { FAIL() << err.what(); }),
-                 redis_async::error::connection_error);
+    ASSERT_THROW(rd_service::execute(
+                     "wrong_name_of_service"_rd, cmd::ping(), [](const result_t &) {},
+                     [&](const error::rd_error &err) { FAIL() << err.what(); }),
+                 error::connection_error);
     ASSERT_THROW(rd_service::add_connection("main=udp://192.168.0.10"_redis),
-                 redis_async::error::connection_error);
+                 error::connection_error);
     ASSERT_THROW(rd_service::add_connection("main=udp://192.168.0.10"_redis, 0),
-                 redis_async::error::connection_error);
+                 error::connection_error);
     rd_service::stop();
 }
