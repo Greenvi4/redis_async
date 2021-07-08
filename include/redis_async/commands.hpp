@@ -50,11 +50,16 @@ namespace redis_async {
         single_command_t set(StringView key, StringView value, std::chrono::milliseconds ttl);
         single_command_t set(StringView key, StringView value, UpdateType udp,
                              std::chrono::milliseconds ttl);
-
         single_command_t get(StringView key);
-
         single_command_t mset(std::initializer_list<std::pair<StringView, StringView>> kv);
         single_command_t mget(std::initializer_list<StringView> keys);
+        single_command_t del(std::initializer_list<StringView> keys);
+        single_command_t exists(std::initializer_list<StringView> keys);
+        single_command_t expire(StringView key, std::chrono::seconds ttl);
+        single_command_t pexpire(StringView key, std::chrono::milliseconds ttl);
+        single_command_t ttl(StringView key);
+        single_command_t pttl(StringView key);
+        single_command_t rename(StringView key, StringView newkey);
 
         single_command_t hset(StringView key,
                               std::initializer_list<std::pair<StringView, StringView>> kv);

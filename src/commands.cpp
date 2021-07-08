@@ -80,6 +80,48 @@ namespace redis_async {
             return std::move(args.cmd());
         }
 
+        single_command_t del(std::initializer_list<StringView> keys) {
+            if (keys.size() == 0)
+                throw error::client_error("DEL could not run without parameters");
+
+            CmdArgs args;
+            args << "DEL" << std::make_pair(keys.begin(), keys.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t exists(std::initializer_list<StringView> keys) {
+            if (keys.size() == 0)
+                throw error::client_error("EXISTS could not run without parameters");
+
+            CmdArgs args;
+            args << "EXISTS" << std::make_pair(keys.begin(), keys.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t expire(StringView key, std::chrono::seconds ttl) {
+            CmdArgs args;
+            args << "EXPIRE" << key << ttl.count();
+            return std::move(args.cmd());
+        }
+
+        single_command_t pexpire(StringView key, std::chrono::milliseconds ttl) {
+            CmdArgs args;
+            args << "PEXPIRE" << key << ttl.count();
+            return std::move(args.cmd());
+        }
+
+        single_command_t ttl(StringView key) {
+            return {"TTL", key};
+        }
+
+        single_command_t pttl(StringView key) {
+            return {"PTTL", key};
+        }
+
+        single_command_t rename(StringView key, StringView newkey) {
+            return {"RENAME", key, newkey};
+        }
+
         single_command_t mget(std::initializer_list<StringView> keys) {
             if (keys.size() == 0)
                 throw error::client_error("MGET could not run without parameters");
@@ -129,6 +171,5 @@ namespace redis_async {
             args << "HMGET" << key << std::make_pair(fields.begin(), fields.end());
             return std::move(args.cmd());
         }
-
     } // namespace cmd
 } // namespace redis_async
