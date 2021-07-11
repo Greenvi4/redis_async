@@ -62,6 +62,7 @@ namespace redis_async {
         single_command_t ttl(StringView key);
         single_command_t pttl(StringView key);
         single_command_t rename(StringView key, StringView newkey);
+        single_command_t keys(StringView pattern);
 
         // hash commands
         single_command_t hset(StringView key,

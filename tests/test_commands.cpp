@@ -330,8 +330,20 @@ TEST(CommandsTest, keys) {
 
     rd_service::execute(
         "tcp"_rd, cmd::rename("key1", "another_key1"),
+        [&](const result_t &res) { EXPECT_EQ("OK", boost::get<redis_async::string_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::keys("*key*"),
         [&](const result_t &res) {
-            EXPECT_EQ("OK", boost::get<redis_async::string_t>(res));
+            auto values = boost::get<redis_async::array_holder_t>(res);
+            EXPECT_EQ(values.elements.size(), 2);
+            EXPECT_EQ("another_key1", boost::get<redis_async::string_t>(values.elements[0]));
+            EXPECT_EQ("key2", boost::get<redis_async::string_t>(values.elements[1]));
             timer.cancel();
             rd_service::stop();
         },

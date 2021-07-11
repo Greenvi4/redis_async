@@ -122,6 +122,10 @@ namespace redis_async {
             return {"RENAME", key, newkey};
         }
 
+        single_command_t keys(StringView pattern) {
+            return {"KEYS", pattern};
+        }
+
         single_command_t mget(std::initializer_list<StringView> keys) {
             if (keys.size() == 0)
                 throw error::client_error("MGET could not run without parameters");
