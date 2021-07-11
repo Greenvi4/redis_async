@@ -230,5 +230,83 @@ namespace redis_async {
             return std::move(args.cmd());
         }
 
+        single_command_t sadd(StringView key, std::initializer_list<StringView> members) {
+            if (members.size() == 0)
+                throw error::client_error("SADD could not run without elements");
+            CmdArgs args;
+            args << "SADD" << key << std::make_pair(members.begin(), members.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t scard(StringView key) {
+            return {"SCARD", key};
+        }
+
+        single_command_t sdiff(std::initializer_list<StringView> keys) {
+            if (keys.size() == 0)
+                throw error::client_error("SDIFF could not run without elements");
+            CmdArgs args;
+            args << "SDIFF" << std::make_pair(keys.begin(), keys.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t sdiffstore(StringView dest, std::initializer_list<StringView> keys) {
+            if (keys.size() == 0)
+                throw error::client_error("SDIFFSTORE could not run without elements");
+            CmdArgs args;
+            args << "SDIFFSTORE" << dest << std::make_pair(keys.begin(), keys.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t sinter(std::initializer_list<StringView> keys) {
+            if (keys.size() == 0)
+                throw error::client_error("SINTER could not run without elements");
+            CmdArgs args;
+            args << "SINTER" << std::make_pair(keys.begin(), keys.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t sinterstore(StringView dest, std::initializer_list<StringView> keys) {
+            if (keys.size() == 0)
+                throw error::client_error("SINTERSTORE could not run without elements");
+            CmdArgs args;
+            args << "SINTERSTORE" << dest << std::make_pair(keys.begin(), keys.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t smembers(StringView key) {
+            return {"SMEMBERS", key};
+        }
+
+        single_command_t spop(StringView key, int count) {
+            if (count > 0)
+                return {"SPOP", key, std::to_string(count)};
+            return {"SPOP", key};
+        }
+
+        single_command_t srem(StringView key, std::initializer_list<StringView> members) {
+            if (members.size() == 0)
+                throw error::client_error("SREM could not run without elements");
+            CmdArgs args;
+            args << "SREM" << key << std::make_pair(members.begin(), members.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t sunion(std::initializer_list<StringView> keys) {
+            if (keys.size() == 0)
+                throw error::client_error("SUNION could not run without elements");
+            CmdArgs args;
+            args << "SUNION" << std::make_pair(keys.begin(), keys.end());
+            return std::move(args.cmd());
+        }
+
+        single_command_t sunionstore(StringView dest, std::initializer_list<StringView> keys) {
+            if (keys.size() == 0)
+                throw error::client_error("SUNIONSTORE could not run without elements");
+            CmdArgs args;
+            args << "SUNIONSTORE" << dest << std::make_pair(keys.begin(), keys.end());
+            return std::move(args.cmd());
+        }
+
     } // namespace cmd
 } // namespace redis_async

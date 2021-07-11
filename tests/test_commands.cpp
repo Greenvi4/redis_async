@@ -706,6 +706,289 @@ TEST(CommandsTest, lists) {
     rd_service::run();
 }
 
+TEST(CommandsTest, sets) {
+    uint16_t port = ep::get_random();
+    auto port_str = boost::lexical_cast<std::string>(port);
+    auto server = ts::make_server({"redis-server", "--port", port_str});
+    ep::wait_port(port);
+
+    using redis_async::rd_service;
+    rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
+
+    boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
+    timer.async_wait([&](boost::system::error_code ec) {
+        if (ec)
+            return;
+        rd_service::stop();
+        FAIL() << "Test timer expired";
+    });
+
+    using redis_async::result_t;
+    namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
+
+    rd_service::execute(
+        "tcp"_rd, cmd::sadd("set1", {"a", "b", "c", "d"}),
+        [&](const result_t &res) { EXPECT_EQ(4, boost::get<redis_async::int_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::sadd("set2", {"c"}),
+        [&](const result_t &res) { EXPECT_EQ(1, boost::get<redis_async::int_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::sadd("set3", {"a", "c", "e"}),
+        [&](const result_t &res) { EXPECT_EQ(3, boost::get<redis_async::int_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::scard("set1"),
+        [&](const result_t &res) { EXPECT_EQ(4, boost::get<redis_async::int_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::scard("not_exists"),
+        [&](const result_t &res) { EXPECT_EQ(0, boost::get<redis_async::int_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::smembers("set3"),
+        [&](const result_t &res) {
+            auto values = boost::get<redis_async::array_holder_t>(res);
+            EXPECT_EQ(values.elements.size(), 3);
+            std::sort(std::begin(values.elements), std::end(values.elements),
+                      [](const auto &l, const auto &r) {
+                          return boost::get<redis_async::string_t>(l) <
+                                 boost::get<redis_async::string_t>(r);
+                      });
+            EXPECT_EQ("a", boost::get<redis_async::string_t>(values.elements[0]));
+            EXPECT_EQ("c", boost::get<redis_async::string_t>(values.elements[1]));
+            EXPECT_EQ("e", boost::get<redis_async::string_t>(values.elements[2]));
+        },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::sdiff({"set1", "set2", "set3"}),
+        [&](const result_t &res) {
+            auto values = boost::get<redis_async::array_holder_t>(res);
+            std::sort(std::begin(values.elements), std::end(values.elements),
+                      [](const auto &l, const auto &r) {
+                          return boost::get<redis_async::string_t>(l) <
+                                 boost::get<redis_async::string_t>(r);
+                      });
+            EXPECT_EQ(values.elements.size(), 2);
+            EXPECT_EQ("b", boost::get<redis_async::string_t>(values.elements[0]));
+            EXPECT_EQ("d", boost::get<redis_async::string_t>(values.elements[1]));
+        },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::sdiffstore("diff_sets", {"set1", "set2", "set3"}),
+        [&](const result_t &res) { EXPECT_EQ(2, boost::get<redis_async::int_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::smembers("diff_sets"),
+        [&](const result_t &res) {
+            auto values = boost::get<redis_async::array_holder_t>(res);
+            EXPECT_EQ(values.elements.size(), 2);
+            std::sort(std::begin(values.elements), std::end(values.elements),
+                      [](const auto &l, const auto &r) {
+                          return boost::get<redis_async::string_t>(l) <
+                                 boost::get<redis_async::string_t>(r);
+                      });
+            EXPECT_EQ("b", boost::get<redis_async::string_t>(values.elements[0]));
+            EXPECT_EQ("d", boost::get<redis_async::string_t>(values.elements[1]));
+        },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::sinter({"set1", "set2", "set3"}),
+        [&](const result_t &res) {
+            auto values = boost::get<redis_async::array_holder_t>(res);
+            EXPECT_EQ(values.elements.size(), 1);
+            EXPECT_EQ("c", boost::get<redis_async::string_t>(values.elements[0]));
+        },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::sinterstore("inter_sets", {"set1", "set2", "set3"}),
+        [&](const result_t &res) { EXPECT_EQ(1, boost::get<redis_async::int_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::smembers("inter_sets"),
+        [&](const result_t &res) {
+            auto values = boost::get<redis_async::array_holder_t>(res);
+            EXPECT_EQ(values.elements.size(), 1);
+            EXPECT_EQ("c", boost::get<redis_async::string_t>(values.elements[0]));
+        },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::sunion({"set1", "set2", "set3"}),
+        [&](const result_t &res) {
+            auto values = boost::get<redis_async::array_holder_t>(res);
+            std::sort(std::begin(values.elements), std::end(values.elements),
+                      [](const auto &l, const auto &r) {
+                          return boost::get<redis_async::string_t>(l) <
+                                 boost::get<redis_async::string_t>(r);
+                      });
+            EXPECT_EQ(values.elements.size(), 5);
+            EXPECT_EQ("a", boost::get<redis_async::string_t>(values.elements[0]));
+            EXPECT_EQ("b", boost::get<redis_async::string_t>(values.elements[1]));
+            EXPECT_EQ("c", boost::get<redis_async::string_t>(values.elements[2]));
+            EXPECT_EQ("d", boost::get<redis_async::string_t>(values.elements[3]));
+            EXPECT_EQ("e", boost::get<redis_async::string_t>(values.elements[4]));
+        },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::sunionstore("union_sets", {"set1", "set2", "set3"}),
+        [&](const result_t &res) { EXPECT_EQ(5, boost::get<redis_async::int_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::smembers("union_sets"),
+        [&](const result_t &res) {
+            auto values = boost::get<redis_async::array_holder_t>(res);
+            std::sort(std::begin(values.elements), std::end(values.elements),
+                      [](const auto &l, const auto &r) {
+                          return boost::get<redis_async::string_t>(l) <
+                                 boost::get<redis_async::string_t>(r);
+                      });
+            EXPECT_EQ(values.elements.size(), 5);
+            EXPECT_EQ("a", boost::get<redis_async::string_t>(values.elements[0]));
+            EXPECT_EQ("b", boost::get<redis_async::string_t>(values.elements[1]));
+            EXPECT_EQ("c", boost::get<redis_async::string_t>(values.elements[2]));
+            EXPECT_EQ("d", boost::get<redis_async::string_t>(values.elements[3]));
+            EXPECT_EQ("e", boost::get<redis_async::string_t>(values.elements[4]));
+        },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::spop("set1"),
+        [&](const result_t &res) {
+            auto value = boost::get<redis_async::string_t>(res);
+            EXPECT_TRUE(value == "a" || value == "b" || value == "c" || value == "d");
+        },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::spop("set1", 2),
+        [&](const result_t &res) {
+            auto values = boost::get<redis_async::array_holder_t>(res);
+            EXPECT_EQ(values.elements.size(), 2);
+            for (const auto &v : values.elements) {
+                auto value = boost::get<redis_async::string_t>(v);
+                EXPECT_TRUE(value == "a" || value == "b" || value == "c" || value == "d");
+            }
+        },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::scard("set1"),
+        [&](const result_t &res) { EXPECT_EQ(1, boost::get<redis_async::int_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::srem("set3", {"a"}),
+        [&](const result_t &res) { EXPECT_EQ(1, boost::get<redis_async::int_t>(res)); },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::execute(
+        "tcp"_rd, cmd::srem("set3", {"a", "c", "e", "d"}),
+        [&](const result_t &res) {
+            EXPECT_EQ(2, boost::get<redis_async::int_t>(res));
+            timer.cancel();
+            rd_service::stop();
+        },
+        [&](const error::rd_error &err) {
+            timer.cancel();
+            rd_service::stop();
+            FAIL() << err.what();
+        });
+
+    rd_service::run();
+}
+
 TEST(CommandsTest, hadnle_exceptions) {
 
     uint16_t port = ep::get_random();

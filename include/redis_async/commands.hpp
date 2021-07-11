@@ -42,9 +42,11 @@ namespace redis_async {
     using command_wrapper_t = boost::variant<command_container_t, single_command_t>;
 
     namespace cmd {
+        // ping commands
         single_command_t ping(StringView msg = {});
         single_command_t echo(StringView msg);
 
+        // key/value commands
         single_command_t set(StringView key, StringView value);
         single_command_t set(StringView key, StringView value, UpdateType udp);
         single_command_t set(StringView key, StringView value, std::chrono::milliseconds ttl);
@@ -61,6 +63,7 @@ namespace redis_async {
         single_command_t pttl(StringView key);
         single_command_t rename(StringView key, StringView newkey);
 
+        // hash commands
         single_command_t hset(StringView key,
                               std::initializer_list<std::pair<StringView, StringView>> kv);
         single_command_t hdel(StringView key, std::initializer_list<StringView> keys);
@@ -70,6 +73,7 @@ namespace redis_async {
                                std::initializer_list<std::pair<StringView, StringView>> kv);
         single_command_t hmget(StringView key, std::initializer_list<StringView> fields);
 
+        // list commands
         single_command_t lpush(StringView key, std::initializer_list<StringView> elements);
         single_command_t rpush(StringView key, std::initializer_list<StringView> elements);
         single_command_t lpop(StringView key);
@@ -81,6 +85,18 @@ namespace redis_async {
         single_command_t lindex(StringView key, int index);
         single_command_t ltrim(StringView key, int start, int stop);
 
+        // set commands
+        single_command_t sadd(StringView key, std::initializer_list<StringView> members);
+        single_command_t scard(StringView key);
+        single_command_t sdiff(std::initializer_list<StringView> keys);
+        single_command_t sdiffstore(StringView dest, std::initializer_list<StringView> keys);
+        single_command_t sinter(std::initializer_list<StringView> keys);
+        single_command_t sinterstore(StringView dest, std::initializer_list<StringView> keys);
+        single_command_t smembers(StringView key);
+        single_command_t spop(StringView key, int count = 0);
+        single_command_t srem(StringView key, std::initializer_list<StringView> members);
+        single_command_t sunion(std::initializer_list<StringView> keys);
+        single_command_t sunionstore(StringView dest, std::initializer_list<StringView> keys);
 
     } // namespace cmd
 
