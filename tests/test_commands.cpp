@@ -7,24 +7,18 @@
 #include <fstream>
 #include <gtest/gtest.h>
 
-#include "empty_port.hpp"
-#include "test_server.hpp"
+#include "redis_instance.hpp"
 
-namespace ts = test_server;
-namespace ep = empty_port;
+namespace rt = redis_async::test;
 
 TEST(CommandsTest, ping) {
-    uint16_t port = ep::get_random();
-    auto port_str = boost::lexical_cast<std::string>(port);
-    auto server = ts::make_server({"redis-server", "--port", port_str});
-    ep::wait_port(port);
-
     using redis_async::rd_service;
+    using redis_async::result_t;
     namespace error = redis_async::error;
     namespace cmd = redis_async::cmd;
-    using redis_async::result_t;
 
-    rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
+    rt::RedisInstance inst;
+    rd_service::add_connection("tcp=" + inst.getUri(), 1);
 
     boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
     timer.async_wait([&](boost::system::error_code ec) {
@@ -70,13 +64,13 @@ TEST(CommandsTest, ping) {
 }
 
 TEST(CommandsTest, echo) {
-    uint16_t port = ep::get_random();
-    auto port_str = boost::lexical_cast<std::string>(port);
-    auto server = ts::make_server({"redis-server", "--port", port_str});
-    ep::wait_port(port);
-
     using redis_async::rd_service;
-    rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
+    using redis_async::result_t;
+    namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
+
+    rt::RedisInstance inst;
+    rd_service::add_connection("tcp=" + inst.getUri(), 1);
 
     boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
     timer.async_wait([&](boost::system::error_code ec) {
@@ -86,9 +80,6 @@ TEST(CommandsTest, echo) {
         FAIL() << "Test timer expired";
     });
 
-    using redis_async::result_t;
-    namespace error = redis_async::error;
-    namespace cmd = redis_async::cmd;
     const std::string msg = "Hello, World!";
 
     rd_service::execute(
@@ -117,13 +108,13 @@ TEST(CommandsTest, echo) {
 }
 
 TEST(CommandsTest, set_get) {
-    uint16_t port = ep::get_random();
-    auto port_str = boost::lexical_cast<std::string>(port);
-    auto server = ts::make_server({"redis-server", "--port", port_str});
-    ep::wait_port(port);
-
     using redis_async::rd_service;
-    rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
+    using redis_async::result_t;
+    namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
+
+    rt::RedisInstance inst;
+    rd_service::add_connection("tcp=" + inst.getUri(), 1);
 
     boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
     timer.async_wait([&](boost::system::error_code ec) {
@@ -233,13 +224,13 @@ TEST(CommandsTest, set_get) {
 }
 
 TEST(CommandsTest, keys) {
-    uint16_t port = ep::get_random();
-    auto port_str = boost::lexical_cast<std::string>(port);
-    auto server = ts::make_server({"redis-server", "--port", port_str});
-    ep::wait_port(port);
-
     using redis_async::rd_service;
-    rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
+    using redis_async::result_t;
+    namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
+
+    rt::RedisInstance inst;
+    rd_service::add_connection("tcp=" + inst.getUri(), 1);
 
     boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
     timer.async_wait([&](boost::system::error_code ec) {
@@ -357,13 +348,13 @@ TEST(CommandsTest, keys) {
 }
 
 TEST(CommandsTest, mset_mget) {
-    uint16_t port = ep::get_random();
-    auto port_str = boost::lexical_cast<std::string>(port);
-    auto server = ts::make_server({"redis-server", "--port", port_str});
-    ep::wait_port(port);
-
     using redis_async::rd_service;
-    rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
+    using redis_async::result_t;
+    namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
+
+    rt::RedisInstance inst;
+    rd_service::add_connection("tcp=" + inst.getUri(), 1);
 
     boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
     timer.async_wait([&](boost::system::error_code ec) {
@@ -436,13 +427,13 @@ TEST(CommandsTest, mset_mget) {
 }
 
 TEST(CommandsTest, hash) {
-    uint16_t port = ep::get_random();
-    auto port_str = boost::lexical_cast<std::string>(port);
-    auto server = ts::make_server({"redis-server", "--port", port_str});
-    ep::wait_port(port);
-
     using redis_async::rd_service;
-    rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
+    using redis_async::result_t;
+    namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
+
+    rt::RedisInstance inst;
+    rd_service::add_connection("tcp=" + inst.getUri(), 1);
 
     boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
     timer.async_wait([&](boost::system::error_code ec) {
@@ -549,13 +540,13 @@ TEST(CommandsTest, hash) {
 }
 
 TEST(CommandsTest, lists) {
-    uint16_t port = ep::get_random();
-    auto port_str = boost::lexical_cast<std::string>(port);
-    auto server = ts::make_server({"redis-server", "--port", port_str});
-    ep::wait_port(port);
-
     using redis_async::rd_service;
-    rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
+    using redis_async::result_t;
+    namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
+
+    rt::RedisInstance inst;
+    rd_service::add_connection("tcp=" + inst.getUri(), 1);
 
     boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
     timer.async_wait([&](boost::system::error_code ec) {
@@ -722,13 +713,13 @@ TEST(CommandsTest, lists) {
 }
 
 TEST(CommandsTest, sets) {
-    uint16_t port = ep::get_random();
-    auto port_str = boost::lexical_cast<std::string>(port);
-    auto server = ts::make_server({"redis-server", "--port", port_str});
-    ep::wait_port(port);
-
     using redis_async::rd_service;
-    rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
+    using redis_async::result_t;
+    namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
+
+    rt::RedisInstance inst;
+    rd_service::add_connection("tcp=" + inst.getUri(), 1);
 
     boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
     timer.async_wait([&](boost::system::error_code ec) {
@@ -1005,14 +996,13 @@ TEST(CommandsTest, sets) {
 }
 
 TEST(CommandsTest, hadnle_exceptions) {
-
-    uint16_t port = ep::get_random();
-    auto port_str = boost::lexical_cast<std::string>(port);
-    auto server = ts::make_server({"redis-server", "--port", port_str});
-    ep::wait_port(port);
-
     using redis_async::rd_service;
-    rd_service::add_connection("tcp=tcp://localhost:" + port_str, 1);
+    using redis_async::result_t;
+    namespace error = redis_async::error;
+    namespace cmd = redis_async::cmd;
+
+    rt::RedisInstance inst;
+    rd_service::add_connection("tcp=" + inst.getUri(), 1);
 
     boost::asio::deadline_timer timer(*rd_service::io_service(), boost::posix_time::seconds(5));
     timer.async_wait([&](boost::system::error_code ec) {
