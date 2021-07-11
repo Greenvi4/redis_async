@@ -318,7 +318,10 @@ TEST(CommandsTest, keys) {
 
     rd_service::execute(
         "tcp"_rd, cmd::pttl("key2"),
-        [&](const result_t &res) { EXPECT_EQ(1000, boost::get<redis_async::int_t>(res)); },
+        [&](const result_t &res) {
+            EXPECT_GE(1000, boost::get<redis_async::int_t>(res));
+            EXPECT_LE(990, boost::get<redis_async::int_t>(res));
+        },
         [&](const error::rd_error &err) {
             timer.cancel();
             rd_service::stop();
