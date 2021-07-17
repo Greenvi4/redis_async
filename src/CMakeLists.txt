@@ -46,7 +46,7 @@ add_library(${PROJECT_NAME}
         details/redis_impl.cpp
         )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_SYSTEM_LIBRARIES} log4cxx)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_LIBRARIES} log4cxx)
 target_include_directories(${PROJECT_NAME} PUBLIC ../include)
 
 install_target_headers()
