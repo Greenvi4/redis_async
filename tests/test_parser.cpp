@@ -14,7 +14,7 @@
 TEST(ParserTests, raw_cmd) {
     using redis_async::command_container_t;
     using redis_async::single_command_t;
-    using Buffer = std::string;
+    using Buffer = std::vector<char>;
     using Protocol = redis_async::details::Protocol;
 
     {
@@ -23,7 +23,7 @@ TEST(ParserTests, raw_cmd) {
         Protocol::serialize(result, ping);
         const std::string expected = "*2\r\n$4\r\nPING\r\n$13\r\nHello, World!\r\n";
         ASSERT_EQ(result.size(), expected.size());
-        ASSERT_EQ(result, expected);
+        ASSERT_TRUE(std::equal(result.begin(), result.end(), expected.begin()));
     }
     {
         single_command_t cmd= {"HSET", "key", "value1", "", "value2", ""};
@@ -32,7 +32,7 @@ TEST(ParserTests, raw_cmd) {
         const std::string expected("*6\r\n$4\r\nHSET\r\n$3\r\nkey\r\n$6\r\nvalue1\r\n$0\r\n\r\n$"
                                    "6\r\nvalue2\r\n$0\r\n\r\n");
         ASSERT_EQ(result.size(), expected.size());
-        ASSERT_EQ(result, expected);
+        ASSERT_TRUE(std::equal(result.begin(), result.end(), expected.begin()));
     }
     {
         command_container_t cont = {{"PING", "Hello, World!"}, {"LPUSH", "list", "value"}};
@@ -41,7 +41,7 @@ TEST(ParserTests, raw_cmd) {
         const std::string expected = "*2\r\n$4\r\nPING\r\n$13\r\nHello, World!\r\n"
                                      "*3\r\n$5\r\nLPUSH\r\n$4\r\nlist\r\n$5\r\nvalue\r\n";
         ASSERT_EQ(result.size(), expected.size());
-        ASSERT_EQ(result, expected);
+        ASSERT_TRUE(std::equal(result.begin(), result.end(), expected.begin()));
     }
 }
 

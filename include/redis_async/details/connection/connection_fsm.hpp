@@ -293,7 +293,7 @@ namespace redis_async {
 
             void send(events::execute::Buffer &&m, const asio_io_handler &handler = asio_io_handler()) {
                 if (transport_.connected()) {
-                    auto msg = ::std::make_shared<std::string>(::std::move(m));
+                    auto msg = ::std::make_shared<events::execute::Buffer>(::std::move(m));
                     auto _this = shared_base::shared_from_this();
                     auto write_handler = [_this, handler, msg](asio_config::error_code ec,
                                                                size_t sz) {

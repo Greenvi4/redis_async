@@ -165,8 +165,8 @@ namespace redis_async {
                     return;
                 }
                 connection_ptr conn;
-                using serializer_t = command_serializer_visitor<std::string>;
-                events::execute evt{"", conn_cb, err};
+                using serializer_t = command_serializer_visitor<events::execute::Buffer>;
+                events::execute evt{{}, conn_cb, err};
                 boost::apply_visitor(serializer_t(evt.buff), cmd);
 
                 if (get_idle_connection(conn)) {

@@ -39,24 +39,20 @@ namespace redis_async {
 
             template <typename DynamicBuffer>
             inline static void serialize(DynamicBuffer &buff, const single_command_t &cmd) {
-                buff.reserve(command_size(cmd));
-                constexpr std::size_t buff_sz = 64;
-                char data[buff_sz];
-                std::size_t total = snprintf(data, buff_sz, "*%zu\r\n", cmd.arguments.size());
-                auto it = std::copy(data, data + total, std::back_inserter(buff));
+                auto total = buff.size();
+                auto size = command_size(cmd);
+                buff.resize(total + size);
+                total += snprintf(buff.data() + total, size, "*%zu\r\n", cmd.arguments.size());
 
                 for (const auto &arg : cmd.arguments) {
-                    auto bytes = snprintf(data, buff_sz, "$%zu\r\n", arg.size());
-                    std::copy(data, data + bytes, it);
-                    total += bytes;
+                    total += snprintf(buff.data() + total, size, "$%zu\r\n", arg.size());
 
                     if (!arg.empty()) {
-                        std::copy(arg.begin(), arg.end(), it);
+                        std::memcpy(buff.data() + total, arg.data(), arg.size());
                         total += arg.size();
                     }
-                    it = '\r';
-                    it = '\n';
-                    total += terminator_size;
+                    buff[total++] = '\r';
+                    buff[total++] = '\n';
                 }
             }
 
@@ -78,7 +74,7 @@ namespace redis_async {
                 : buff_{buff} {
             }
 
-            template<typename T>
+            template <typename T>
             void operator()(const T &value) const {
                 Protocol::serialize(buff_, value);
             }

@@ -14,7 +14,7 @@ namespace redis_async {
         namespace events {
 
             struct execute {
-                using Buffer = std::string;
+                using Buffer = std::vector<char>;
 
                 Buffer buff;
                 query_result_callback result;
