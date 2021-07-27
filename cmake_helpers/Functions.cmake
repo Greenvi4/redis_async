@@ -26,7 +26,7 @@ endmacro()
 
 macro(install_target_headers)
     install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}
-            DESTINATION include/kpoiurv
+            DESTINATION include/
             FILE_PERMISSIONS
                 OWNER_READ OWNER_WRITE
                 GROUP_READ
@@ -45,14 +45,14 @@ endmacro()
 macro(install_target_lib)
     install(TARGETS ${PROJECT_NAME}
                 LIBRARY
-                    DESTINATION lib/kpoiurv
+                    DESTINATION lib/
                     PERMISSIONS
                         OWNER_READ OWNER_WRITE
                         GROUP_READ
                         WORLD_READ
                     COMPONENT lib
                 ARCHIVE
-                    DESTINATION lib/kpoiurv
+                    DESTINATION lib/
                     PERMISSIONS
                         OWNER_READ OWNER_WRITE
                         GROUP_READ
@@ -75,7 +75,7 @@ endmacro()
 
 macro(install_target_configs)
     install(FILES ${ARGN}
-                DESTINATION share/kpoiurv
+                DESTINATION share/
                 PERMISSIONS
                     OWNER_READ OWNER_WRITE
                     GROUP_READ
@@ -83,58 +83,6 @@ macro(install_target_configs)
                 COMPONENT cfg
            )
 endmacro()
-
-macro(install_target_plugin)
-    install(TARGETS ${PROJECT_NAME}
-                LIBRARY
-                    DESTINATION lib/kpoiurv/plugins
-                    PERMISSIONS
-                        OWNER_READ OWNER_WRITE
-                        GROUP_READ
-                        WORLD_READ
-                    COMPONENT plugin
-                ARCHIVE
-                    DESTINATION lib/kpoiurv/plugins
-                    PERMISSIONS
-                        OWNER_READ OWNER_WRITE
-                        GROUP_READ
-                        WORLD_READ
-                    COMPONENT plugin
-           )
-endmacro()
-
-function(CheckAndSetCoordinateLib)
-    if(NOT DEFINED COORDINATESYSTEMS_ROOT)
-        find_path(CoordinateLibInclude CoordinateSystems.h PATH_SUFFIXES "cs")
-    else()
-        find_path(CoordinateLibInclude CoordinateSystems.h PATHS "${COORDINATESYSTEMS_ROOT}/include" PATH_SUFFIXES "cs")
-    endif()
-
-    if(NOT CoordinateLibInclude)
-        message(FATAL_ERROR "CoordinateSystems headers not found! Please install it to '/usr/include' or set COORDINATESYSTEMS_ROOT")
-    endif()
-    message(STATUS "Looking for CoordinateSystems.h -- found in ${CoordinateLibInclude}")
-    if(NOT DEFINED COORDINATESYSTEMS_ROOT)
-        set(COORDINATESYSTEMS_INCLUDES ${CoordinateLibInclude} PARENT_SCOPE)
-    else()
-        get_filename_component(CoordinateLibInclude "${CoordinateLibInclude}" DIRECTORY)
-        set(COORDINATESYSTEMS_INCLUDES ${CoordinateLibInclude} ${CoordinateLibInclude}/cs PARENT_SCOPE)
-    endif()
-
-
-    if(NOT DEFINED COORDINATESYSTEMS_ROOT)
-        find_path(CoordinateLibs libCoordinateSystems.so PATH_SUFFIXES "lib")
-    else()
-        find_path(CoordinateLibs libCoordinateSystems.so PATHS "${COORDINATESYSTEMS_ROOT}" PATH_SUFFIXES "lib")
-    endif()
-
-    if(NOT CoordinateLibs)
-        message(FATAL_ERROR "CoordinateSystems libraries not found! Please install it to '/usr/lib' or set COORDINATESYSTEMS_ROOT")
-    endif()
-    message(STATUS "Looking for libCoordinateSystems.so -- found in ${CoordinateLibs}")
-    set(COORDINATESYSTEMS_LIBRARIES ${CoordinateLibs}/libCoordinateSystems.so
-        ${CoordinateLibs}/libPhysicsFunctions.so PARENT_SCOPE)
-endfunction()
 
 function(build_gtest)
     set(DEFAULT_GMOCK_DIR "/usr/src/googletest/googlemock")
@@ -180,40 +128,4 @@ function(build_gtest)
     endif()
     set(GMOCK_DIR "${GMOCK_DIR}" PARENT_SCOPE)
     set(GMOCK_BUILD_DIR "${DEFAULT_GMOCK_BUILD_DIR}" PARENT_SCOPE)
-endfunction()
-
-function(fetch path content)
-    if(${CMAKE_VERSION} VERSION_GREATER "3.11")
-        include(FetchContent)
-    else()
-        include("${CMAKE_SOURCE_DIR}/cmake_helpers/FetchContent.cmake")
-    endif()
-    if(${ARGC} GREATER 2)
-        FetchContent_Declare(
-            ${content}
-            GIT_REPOSITORY git@gitlab.ntc-vko.org:${path}/${content}.git
-            GIT_TAG ${ARGN}
-            )
-    else()
-        FetchContent_Declare(
-            ${content}
-            GIT_REPOSITORY git@gitlab.ntc-vko.org:${path}/${content}.git
-            )
-    endif()
-    FetchContent_MakeAvailable(${content})
-endfunction()
-
-function(fetch_module moduleName)
-    message(STATUS "Fetching module ${moduleName}")
-    fetch("selection/kpoiurv/modules" "${moduleName}" "${ARGN}")
-endfunction()
-
-function(fetch_lib libsName)
-    message(STATUS "Fetching library ${libsName}")
-    fetch("selection/kpoiurv" "${libsName}" "${ARGN}")
-endfunction()
-
-function(fetch_plugin pluginsName)
-    message(STATUS "Fetching plugin ${pluginsName}")
-    fetch("selection/kpoiurv/plugins" "${pluginsName}" "${ARGN}")
 endfunction()
