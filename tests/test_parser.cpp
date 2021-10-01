@@ -541,6 +541,8 @@ TEST(ParserTests, array_wrong_data) {
     auto intr_error =
         redis_async::error::make_error_code(redis_async::error::errc::wrong_introduction);
 
+    boost::ignore_unused_variable_warning(term_error);
+
     std::ostream(&buff) << "*123\n";
 
     auto data = buff.data();

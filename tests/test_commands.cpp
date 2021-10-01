@@ -270,7 +270,7 @@ TEST(CommandsTest, mset_mget) {
         error::client_error);
 
     ASSERT_THROW(rd_service::execute(
-                     "tcp"_rd, cmd::mget({}), [&](const result_t &res) {}, error_handler),
+                     "tcp"_rd, cmd::mget({}), [&](const result_t &) {}, error_handler),
                  error::client_error);
 
     rd_service::run();

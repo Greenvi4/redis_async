@@ -139,6 +139,7 @@ namespace redis_async {
                 }
 
                 void on_exit(const events::recv &evt, connection_fsm_type &fsm) {
+                    boost::ignore_unused_variable_warning(evt);
                     LOG4CXX_TRACE(logger,
                                   "Conn#" << fsm.number() << ": state[authn]: exit by recv");
                     //! @todo check answer
@@ -232,6 +233,7 @@ namespace redis_async {
             // Replaces the default no-transition response.
             template <class FSM, class Event>
             void no_transition(Event const &e, FSM &fsm, int state) {
+                boost::ignore_unused_variable_warning(e);
                 LOG4CXX_ERROR(logger, "Conn#" << fsm.number() << ": no transition from state "
                                               << state << " on event " << demangle<Event>());
                 BOOST_ASSERT(false);
