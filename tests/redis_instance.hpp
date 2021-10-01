@@ -8,6 +8,7 @@
 #include <redis_async/redis_async.hpp>
 
 #include <boost/lexical_cast.hpp>
+#include <boost/asio/deadline_timer.hpp>
 #include <list>
 #include <utility>
 

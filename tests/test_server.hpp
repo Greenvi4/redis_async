@@ -6,14 +6,13 @@
 #define REDIS_ASYNC_TEST_SERVER_HPP
 
 #include <boost/algorithm/string/join.hpp>
+#include <boost/process/child.hpp>
 #include <log4cxx/logger.h>
 #include <memory>
 
-#include "process/child.hpp"
-
 namespace test_server {
     struct TestServer {
-        using child_t = std::unique_ptr<process::child>;
+        using child_t = std::unique_ptr<boost::process::child>;
         child_t child;
         log4cxx::LoggerPtr logger;
 
@@ -21,7 +20,7 @@ namespace test_server {
             : logger(log4cxx::Logger::getLogger("redis_async.test.server")) {
             std::string str = boost::algorithm::join(args, " ");
             LOG4CXX_INFO(logger, "going to fork to start: " << str);
-            auto process = new process::child(str);
+            auto process = new boost::process::child(str);
             child.reset(process);
         }
         ~TestServer() {
