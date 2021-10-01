@@ -7,6 +7,8 @@
 
 #include <redis_async/commands.hpp>
 
+#include <cstring>
+
 namespace redis_async {
     namespace details {
 
@@ -65,7 +67,7 @@ namespace redis_async {
         };
 
         template <typename DynamicBuffer>
-        class command_serializer_visitor : public boost::static_visitor<void> {
+        class command_serializer_visitor {
         private:
             DynamicBuffer &buff_;
 

@@ -27,7 +27,7 @@ namespace redis_async {
                 CmdArgs &append(Arg &&arg, Args &&...args);
 
                 // All overloads of operator<< are for internal use only.
-                CmdArgs &operator<<(const StringView &arg);
+                CmdArgs &operator<<(const std::string_view &arg);
 
                 template <typename T, typename std::enable_if<
                                           std::is_arithmetic<typename std::decay<T>::type>::value,
@@ -54,7 +54,7 @@ namespace redis_async {
                 CmdArgs &_append(std::string arg);
 
                 // Shallow copy.
-                CmdArgs &_append(const StringView &arg);
+                CmdArgs &_append(const std::string_view &arg);
 
                 // Shallow copy.
                 CmdArgs &_append(const char *arg);
@@ -87,7 +87,7 @@ namespace redis_async {
                 return append(std::forward<Args>(args)...);
             }
 
-            inline CmdArgs &CmdArgs::operator<<(const StringView &arg) {
+            inline CmdArgs &CmdArgs::operator<<(const std::string_view &arg) {
                 m_cmd.arguments.emplace_back(arg.data(), arg.size());
                 return *this;
             }
@@ -118,7 +118,7 @@ namespace redis_async {
                 return *this;
             }
 
-            inline CmdArgs &CmdArgs::_append(const StringView &arg) {
+            inline CmdArgs &CmdArgs::_append(const std::string_view &arg) {
                 return operator<<(arg);
             }
 
