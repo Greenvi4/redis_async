@@ -293,7 +293,8 @@ namespace redis_async {
                 send(std::move(buff));
             }
 
-            void send(events::execute::Buffer &&m, const asio_io_handler &handler = asio_io_handler()) {
+            void send(events::execute::Buffer &&m,
+                      const asio_io_handler &handler = asio_io_handler()) {
                 if (transport_.connected()) {
                     auto msg = ::std::make_shared<events::execute::Buffer>(::std::move(m));
                     auto _this = shared_base::shared_from_this();
@@ -465,7 +466,7 @@ namespace redis_async {
                     auto data = incoming_.data();
                     auto parsed_result =
                         redis_async::details::raw_parse(iterator::begin(data), iterator::end(data));
-                    auto consumed = boost::apply_visitor(handler_t{fsm()}, parsed_result);
+                    auto consumed = std::visit(handler_t{fsm()}, parsed_result);
                     if (!consumed)
                         consumed = max_bytes;
                     incoming_.consume(consumed);

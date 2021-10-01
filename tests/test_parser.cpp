@@ -26,7 +26,7 @@ TEST(ParserTests, raw_cmd) {
         ASSERT_TRUE(std::equal(result.begin(), result.end(), expected.begin()));
     }
     {
-        single_command_t cmd= {"HSET", "key", "value1", "", "value2", ""};
+        single_command_t cmd = {"HSET", "key", "value1", "", "value2", ""};
         Buffer result;
         Protocol::serialize(result, cmd);
         const std::string expected("*6\r\n$4\r\nHSET\r\n$3\r\nkey\r\n$6\r\nvalue1\r\n$0\r\n\r\n$"
@@ -57,10 +57,10 @@ TEST(ParserTests, simple_str) {
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
     auto positive_parse_result =
-        boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
+        std::get<redis_async::details::positive_parse_result_t>(parsed_result);
 
     ASSERT_EQ(answer.size(), positive_parse_result.consumed);
-    ASSERT_EQ("OK", boost::get<redis_async::string_t>(positive_parse_result.result));
+    ASSERT_EQ("OK", std::get<redis_async::string_t>(positive_parse_result.result));
 
     buff.consume(positive_parse_result.consumed);
 }
@@ -76,7 +76,7 @@ TEST(ParserTests, simple_str_protocol_error) {
     auto data = buff.data();
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    auto error = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    auto error = std::get<redis_async::details::protocol_error_t>(parsed_result);
 
     ASSERT_EQ(error.code,
               redis_async::error::make_error_code(redis_async::error::errc::not_enough_data));
@@ -93,7 +93,7 @@ TEST(ParserTests, error) {
     auto data = buff.data();
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    auto error = boost::get<redis_async::details::error_t>(parsed_result);
+    auto error = std::get<redis_async::details::error_t>(parsed_result);
 
     ASSERT_EQ(answer.size(), error.consumed);
     ASSERT_EQ("Some Error", error.str);
@@ -113,10 +113,10 @@ TEST(ParserTests, integer) {
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
     auto positive_parse_result =
-        boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
+        std::get<redis_async::details::positive_parse_result_t>(parsed_result);
 
     ASSERT_EQ(answer.size(), positive_parse_result.consumed);
-    ASSERT_EQ(-555423, boost::get<redis_async::int_t>(positive_parse_result.result));
+    ASSERT_EQ(-555423, std::get<redis_async::int_t>(positive_parse_result.result));
 }
 
 TEST(ParserTests, bulk_string) {
@@ -131,10 +131,10 @@ TEST(ParserTests, bulk_string) {
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
     auto positive_parse_result =
-        boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
+        std::get<redis_async::details::positive_parse_result_t>(parsed_result);
 
     ASSERT_EQ(answer.size(), positive_parse_result.consumed);
-    ASSERT_EQ("some", boost::get<redis_async::string_t>(positive_parse_result.result));
+    ASSERT_EQ("some", std::get<redis_async::string_t>(positive_parse_result.result));
 }
 
 TEST(ParserTests, bulk_string_emply) {
@@ -149,10 +149,10 @@ TEST(ParserTests, bulk_string_emply) {
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
     auto positive_parse_result =
-        boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
+        std::get<redis_async::details::positive_parse_result_t>(parsed_result);
 
     ASSERT_EQ(answer.size(), positive_parse_result.consumed);
-    ASSERT_EQ("", boost::get<redis_async::string_t>(positive_parse_result.result));
+    ASSERT_EQ("", std::get<redis_async::string_t>(positive_parse_result.result));
 }
 
 TEST(ParserTests, nil) {
@@ -167,10 +167,10 @@ TEST(ParserTests, nil) {
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
     auto positive_parse_result =
-        boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
+        std::get<redis_async::details::positive_parse_result_t>(parsed_result);
 
     ASSERT_EQ(answer.size(), positive_parse_result.consumed);
-    ASSERT_NO_THROW(boost::get<redis_async::nil_t>(positive_parse_result.result));
+    ASSERT_NO_THROW(std::get<redis_async::nil_t>(positive_parse_result.result));
 }
 
 TEST(ParserTests, array) {
@@ -185,13 +185,13 @@ TEST(ParserTests, array) {
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
     auto positive_parse_result =
-        boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
+        std::get<redis_async::details::positive_parse_result_t>(parsed_result);
 
     ASSERT_EQ(answer.size(), positive_parse_result.consumed);
-    auto array = boost::get<redis_async::array_holder_t>(positive_parse_result.result);
+    auto array = std::get<redis_async::array_holder_t>(positive_parse_result.result);
     ASSERT_EQ(array.elements.size(), 2);
-    ASSERT_EQ("some", boost::get<redis_async::string_t>(array.elements[0]));
-    ASSERT_EQ(-555423, boost::get<redis_async::int_t>(array.elements[1]));
+    ASSERT_EQ("some", std::get<redis_async::string_t>(array.elements[0]));
+    ASSERT_EQ(-555423, std::get<redis_async::int_t>(array.elements[1]));
 }
 
 TEST(ParserTests, array_empty) {
@@ -206,10 +206,10 @@ TEST(ParserTests, array_empty) {
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
     auto positive_parse_result =
-        boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
+        std::get<redis_async::details::positive_parse_result_t>(parsed_result);
 
     ASSERT_EQ(answer.size(), positive_parse_result.consumed);
-    auto array = boost::get<redis_async::array_holder_t>(positive_parse_result.result);
+    auto array = std::get<redis_async::array_holder_t>(positive_parse_result.result);
     ASSERT_EQ(array.elements.size(), 0);
 }
 
@@ -225,10 +225,10 @@ TEST(ParserTests, array_nil) {
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
     auto positive_parse_result =
-        boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
+        std::get<redis_async::details::positive_parse_result_t>(parsed_result);
 
     ASSERT_EQ(answer.size(), positive_parse_result.consumed);
-    ASSERT_NO_THROW(boost::get<redis_async::nil_t>(positive_parse_result.result));
+    ASSERT_NO_THROW(std::get<redis_async::nil_t>(positive_parse_result.result));
 }
 
 TEST(ParserTests, array_with_nil_element) {
@@ -243,14 +243,14 @@ TEST(ParserTests, array_with_nil_element) {
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
     auto positive_parse_result =
-        boost::get<redis_async::details::positive_parse_result_t>(parsed_result);
+        std::get<redis_async::details::positive_parse_result_t>(parsed_result);
 
     ASSERT_EQ(answer.size(), positive_parse_result.consumed);
-    auto array = boost::get<redis_async::array_holder_t>(positive_parse_result.result);
+    auto array = std::get<redis_async::array_holder_t>(positive_parse_result.result);
     ASSERT_EQ(array.elements.size(), 3);
-    ASSERT_EQ("some", boost::get<redis_async::string_t>(array.elements[0]));
-    ASSERT_NO_THROW(boost::get<redis_async::nil_t>(array.elements[1]));
-    ASSERT_EQ(-555423, boost::get<redis_async::int_t>(array.elements[2]));
+    ASSERT_EQ("some", std::get<redis_async::string_t>(array.elements[0]));
+    ASSERT_NO_THROW(std::get<redis_async::nil_t>(array.elements[1]));
+    ASSERT_EQ(-555423, std::get<redis_async::int_t>(array.elements[2]));
 }
 
 TEST(ParserTests, wrong_introduction) {
@@ -264,7 +264,7 @@ TEST(ParserTests, wrong_introduction) {
     auto data = buff.data();
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    auto result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    auto result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code,
               redis_async::error::make_error_code(redis_async::error::errc::wrong_introduction));
 }
@@ -277,7 +277,7 @@ TEST(ParserTests, empty_buffer) {
     auto data = buff.data();
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    auto result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    auto result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code,
               redis_async::error::make_error_code(redis_async::error::errc::not_enough_data));
 }
@@ -294,7 +294,7 @@ TEST(ParserTests, simple_string_not_enough) {
     auto data = buff.data();
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    auto result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    auto result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, expected_code);
     buff.consume(buff.size());
 
@@ -302,7 +302,7 @@ TEST(ParserTests, simple_string_not_enough) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, expected_code);
     buff.consume(buff.size());
 
@@ -310,7 +310,7 @@ TEST(ParserTests, simple_string_not_enough) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, expected_code);
     buff.consume(buff.size());
 }
@@ -327,7 +327,7 @@ TEST(ParserTests, error_not_enough) {
     auto data = buff.data();
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    auto result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    auto result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, expected_code);
     buff.consume(buff.size());
 
@@ -335,7 +335,7 @@ TEST(ParserTests, error_not_enough) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, expected_code);
     buff.consume(buff.size());
 
@@ -343,7 +343,7 @@ TEST(ParserTests, error_not_enough) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, expected_code);
     buff.consume(buff.size());
 }
@@ -361,7 +361,7 @@ TEST(ParserTests, int_wrong_data) {
     auto data = buff.data();
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    auto result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    auto result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, not_enough);
     buff.consume(buff.size());
 
@@ -369,7 +369,7 @@ TEST(ParserTests, int_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, not_enough);
     buff.consume(buff.size());
 
@@ -377,7 +377,7 @@ TEST(ParserTests, int_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, not_enough);
     buff.consume(buff.size());
 
@@ -385,7 +385,7 @@ TEST(ParserTests, int_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, conv_error);
     buff.consume(buff.size());
 
@@ -393,7 +393,7 @@ TEST(ParserTests, int_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, conv_error);
     buff.consume(buff.size());
 
@@ -401,7 +401,7 @@ TEST(ParserTests, int_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, conv_error);
     buff.consume(buff.size());
 }
@@ -414,8 +414,7 @@ TEST(ParserTests, bulk_string_wrong_data) {
         redis_async::error::make_error_code(redis_async::error::errc::not_enough_data);
     auto conv_error =
         redis_async::error::make_error_code(redis_async::error::errc::count_conversion);
-    auto range_error =
-        redis_async::error::make_error_code(redis_async::error::errc::count_range);
+    auto range_error = redis_async::error::make_error_code(redis_async::error::errc::count_range);
     auto term_error =
         redis_async::error::make_error_code(redis_async::error::errc::bulk_terminator);
 
@@ -424,7 +423,7 @@ TEST(ParserTests, bulk_string_wrong_data) {
     auto data = buff.data();
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    auto result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    auto result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, not_enough);
     buff.consume(buff.size());
 
@@ -432,7 +431,7 @@ TEST(ParserTests, bulk_string_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, not_enough);
     buff.consume(buff.size());
 
@@ -440,7 +439,7 @@ TEST(ParserTests, bulk_string_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, not_enough);
     buff.consume(buff.size());
 
@@ -448,7 +447,7 @@ TEST(ParserTests, bulk_string_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, not_enough);
     buff.consume(buff.size());
 
@@ -456,7 +455,7 @@ TEST(ParserTests, bulk_string_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, conv_error);
     buff.consume(buff.size());
 
@@ -464,7 +463,7 @@ TEST(ParserTests, bulk_string_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, conv_error);
     buff.consume(buff.size());
 
@@ -472,7 +471,7 @@ TEST(ParserTests, bulk_string_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, conv_error);
     buff.consume(buff.size());
 
@@ -480,7 +479,7 @@ TEST(ParserTests, bulk_string_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, range_error);
     buff.consume(buff.size());
 
@@ -488,7 +487,7 @@ TEST(ParserTests, bulk_string_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, not_enough);
     buff.consume(buff.size());
 
@@ -496,7 +495,7 @@ TEST(ParserTests, bulk_string_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, term_error);
     buff.consume(buff.size());
 
@@ -504,7 +503,7 @@ TEST(ParserTests, bulk_string_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, term_error);
     buff.consume(buff.size());
 
@@ -512,7 +511,7 @@ TEST(ParserTests, bulk_string_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, term_error);
     buff.consume(buff.size());
 
@@ -520,10 +519,9 @@ TEST(ParserTests, bulk_string_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, not_enough);
     buff.consume(buff.size());
-
 }
 
 TEST(ParserTests, array_wrong_data) {
@@ -534,8 +532,7 @@ TEST(ParserTests, array_wrong_data) {
         redis_async::error::make_error_code(redis_async::error::errc::not_enough_data);
     auto conv_error =
         redis_async::error::make_error_code(redis_async::error::errc::count_conversion);
-    auto range_error =
-        redis_async::error::make_error_code(redis_async::error::errc::count_range);
+    auto range_error = redis_async::error::make_error_code(redis_async::error::errc::count_range);
     auto term_error =
         redis_async::error::make_error_code(redis_async::error::errc::bulk_terminator);
     auto intr_error =
@@ -548,7 +545,7 @@ TEST(ParserTests, array_wrong_data) {
     auto data = buff.data();
     auto parsed_result =
         redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    auto result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    auto result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, not_enough);
     buff.consume(buff.size());
 
@@ -556,7 +553,7 @@ TEST(ParserTests, array_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, not_enough);
     buff.consume(buff.size());
 
@@ -564,7 +561,7 @@ TEST(ParserTests, array_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, not_enough);
     buff.consume(buff.size());
 
@@ -572,7 +569,7 @@ TEST(ParserTests, array_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, not_enough);
     buff.consume(buff.size());
 
@@ -580,7 +577,7 @@ TEST(ParserTests, array_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, conv_error);
     buff.consume(buff.size());
 
@@ -588,7 +585,7 @@ TEST(ParserTests, array_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, conv_error);
     buff.consume(buff.size());
 
@@ -596,7 +593,7 @@ TEST(ParserTests, array_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, conv_error);
     buff.consume(buff.size());
 
@@ -604,7 +601,7 @@ TEST(ParserTests, array_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, range_error);
     buff.consume(buff.size());
 
@@ -612,7 +609,7 @@ TEST(ParserTests, array_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, intr_error);
     buff.consume(buff.size());
 
@@ -620,7 +617,7 @@ TEST(ParserTests, array_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, not_enough);
     buff.consume(buff.size());
 
@@ -628,7 +625,7 @@ TEST(ParserTests, array_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, range_error);
     buff.consume(buff.size());
 
@@ -636,7 +633,7 @@ TEST(ParserTests, array_wrong_data) {
 
     data = buff.data();
     parsed_result = redis_async::details::raw_parse(Iterator::begin(data), Iterator::end(data));
-    result = boost::get<redis_async::details::protocol_error_t>(parsed_result);
+    result = std::get<redis_async::details::protocol_error_t>(parsed_result);
     ASSERT_EQ(result.code, intr_error);
     buff.consume(buff.size());
 }

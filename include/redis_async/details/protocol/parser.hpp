@@ -5,9 +5,9 @@
 #ifndef REDIS_ASYNC_PARSER_HPP
 #define REDIS_ASYNC_PARSER_HPP
 
+#include <redis_async/details/protocol/markup_helper.hpp>
 #include <redis_async/error.hpp>
 #include <redis_async/rd_types.hpp>
-#include <redis_async/details/protocol/markup_helper.hpp>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/variant.hpp>
@@ -43,7 +43,7 @@ namespace redis_async {
                 using parser_t = string_parser_t<Iterator>;
 
                 auto result = parser_t::apply(from, to, already_consumed);
-                auto *wrapped_string = boost::get<positive_parse_result_t>(&result);
+                auto *wrapped_string = std::get_if<positive_parse_result_t>(&result);
                 if (!wrapped_string) {
                     return result;
                 }
@@ -59,7 +59,7 @@ namespace redis_async {
                 using parser_t = string_parser_t<Iterator>;
 
                 auto result = parser_t::apply(from, to, already_consumed);
-                auto *wrapped_string = boost::get<positive_parse_result_t>(&result);
+                auto *wrapped_string = std::get_if<positive_parse_result_t>(&result);
                 if (!wrapped_string) {
                     return result;
                 }
@@ -78,13 +78,13 @@ namespace redis_async {
                 using helper = markup_helper_t<Iterator>;
                 using count_parser_t = int_parser_t<Iterator>;
                 auto count_result = count_parser_t::apply(from, to, already_consumed);
-                auto *count_wrapped = boost::get<positive_parse_result_t>(&count_result);
+                auto *count_wrapped = std::get_if<positive_parse_result_t>(&count_result);
                 if (!count_wrapped) {
                     return count_result;
                 }
                 auto head = from + (count_wrapped->consumed - already_consumed);
                 size_t left = std::distance(head, to);
-                auto count = boost::get<int_t>(count_wrapped->result);
+                auto count = std::get<int_t>(count_wrapped->result);
                 if (count == -1)
                     return helper::markup_nil(count_wrapped->consumed);
                 else if (count < -1)
@@ -114,11 +114,11 @@ namespace redis_async {
                 using count_parser_t = int_parser_t<Iterator>;
                 using element_t = positive_parse_result_t;
                 auto count_result = count_parser_t::apply(from, to, already_consumed);
-                auto *count_wrapped = boost::get<positive_parse_result_t>(&count_result);
+                auto *count_wrapped = std::get_if<positive_parse_result_t>(&count_result);
                 if (!count_wrapped) {
                     return count_result;
                 }
-                auto count = boost::get<int_t>(count_wrapped->result);
+                auto count = std::get<int_t>(count_wrapped->result);
                 if (count == -1)
                     return helper::markup_nil(count_wrapped->consumed);
                 else if (count < -1)
@@ -131,7 +131,7 @@ namespace redis_async {
 
                 while (count) {
                     auto element_result = raw_parse<Iterator>(element_from, to);
-                    auto *element = boost::get<element_t>(&element_result);
+                    auto *element = std::get_if<element_t>(&element_result);
                     if (!element) {
                         return element_result;
                     }
@@ -147,12 +147,12 @@ namespace redis_async {
 
         template <typename Iterator>
         using primary_parser_t =
-            boost::variant<protocol_error_t, string_parser_t<Iterator>, int_parser_t<Iterator>,
-                           error_parser_t<Iterator>, bulk_string_parser_t<Iterator>,
-                           array_parser_t<Iterator>>;
+            std::variant<protocol_error_t, string_parser_t<Iterator>, int_parser_t<Iterator>,
+                         error_parser_t<Iterator>, bulk_string_parser_t<Iterator>,
+                         array_parser_t<Iterator>>;
 
         template <typename Iterator>
-        struct unwrap_primary_parser_t : public boost::static_visitor<parse_result_t> {
+        struct unwrap_primary_parser_t {
             using wrapped_result_t = parse_result_t;
 
             const Iterator &from_;
@@ -202,7 +202,7 @@ namespace redis_async {
         template <typename Iterator>
         parse_result_t raw_parse(const Iterator &from, const Iterator &to) {
             auto primary = construct_primary_parser_t<Iterator>::apply(from, to);
-            return boost::apply_visitor(unwrap_primary_parser_t<Iterator>(from, to), primary);
+            return std::visit(unwrap_primary_parser_t<Iterator>(from, to), primary);
         }
 
     } // namespace details
