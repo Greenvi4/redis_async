@@ -2,7 +2,7 @@ set(BOOST_COMPONENTS
         system
         thread
         )
-set(BOOST_VERSION 1.62)
+set(BOOST_VERSION 1.71)
 find_package(Boost ${BOOST_VERSION} COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
 
 set(HEADERS

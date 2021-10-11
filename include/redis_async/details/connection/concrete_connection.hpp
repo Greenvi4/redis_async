@@ -36,7 +36,7 @@ namespace redis_async {
                     callbacks_.idle(fsm_type::shared_from_this());
                 } else {
                     LOG4CXX_WARN(logger,
-                                 "Conn#" << fsm_type::number() << ": No connection idle callback")
+                                 "Conn#" << fsm_type::number() << ": No connection idle callback");
                 }
             }
 
@@ -45,19 +45,19 @@ namespace redis_async {
                     callbacks_.terminated(fsm_type::shared_from_this());
                 } else {
                     LOG4CXX_INFO(logger, "Conn#" << fsm_type::number()
-                                                 << ": No connection terminated callback")
+                                                 << ": No connection terminated callback");
                 }
                 callbacks_ = connection_callbacks(); // clean up callbacks, no work further.
             }
 
             void notifyErrorImpl(error::connection_error const &e) override {
                 LOG4CXX_ERROR(logger,
-                              "Conn#" << fsm_type::number() << ": Connection error " << e.what())
+                              "Conn#" << fsm_type::number() << ": Connection error " << e.what());
                 if (callbacks_.error) {
                     callbacks_.error(connection_ptr(), e);
                 } else {
                     LOG4CXX_ERROR(logger,
-                                  "Conn#" << fsm_type::number() << ": No connection_error callback")
+                                  "Conn#" << fsm_type::number() << ": No connection_error callback");
                 }
             }
 

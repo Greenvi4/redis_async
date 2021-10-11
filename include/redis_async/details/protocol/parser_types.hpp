@@ -24,7 +24,7 @@ namespace redis_async {
             size_t consumed;
         };
 
-        using parse_result_t = boost::variant<protocol_error_t, error_t, positive_parse_result_t>;
+        using parse_result_t = std::variant<protocol_error_t, error_t, positive_parse_result_t>;
 
     } // namespace details
 } // namespace redis_async

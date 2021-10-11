@@ -26,12 +26,12 @@ namespace redis_async {
             }
 
             static auto markup_error(positive_parse_result_t &wrapped_string) -> parse_result_t {
-                auto &str = boost::get<string_t>(wrapped_string.result);
+                auto &str = std::get<string_t>(wrapped_string.result);
                 return parse_result_t{error_t{std::move(str), wrapped_string.consumed}};
             }
 
             static auto markup_int(positive_parse_result_t &wrapped_string) -> parse_result_t {
-                auto &str = boost::get<string_t>(wrapped_string.result);
+                auto &str = std::get<string_t>(wrapped_string.result);
                 return parse_result_t{positive_parse_result_t{
                     result_t{boost::lexical_cast<int_t>(str)}, wrapped_string.consumed}};
             }

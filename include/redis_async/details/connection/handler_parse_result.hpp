@@ -13,7 +13,7 @@ namespace redis_async {
     namespace details {
 
         template <typename FSM>
-        struct handler_parse_result_t : public boost::static_visitor<std::size_t> {
+        struct handler_parse_result_t {
 
             explicit handler_parse_result_t(FSM &fsm)
                 : m_fsm(fsm) {
