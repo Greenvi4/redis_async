@@ -44,7 +44,7 @@ namespace redis_async {
                 if (co_.uri.empty())
                     throw error::connection_error("No URI in database connection string");
 
-                LOG4CXX_INFO(logger, "Connection pool max size " << pool_size)
+                LOG4CXX_INFO(logger, "Connection pool max size " << pool_size);
             }
 
             rdalias const &alias() const {
@@ -69,11 +69,11 @@ namespace redis_async {
                     lock_type lock{conn_mutex_};
                     ready_connections_.push(std::move(conn));
                     LOG4CXX_INFO(logger, alias()
-                                             << " idle connections " << ready_connections_.size())
+                                             << " idle connections " << ready_connections_.size());
                 }
             }
             void erase_connection(const connection_ptr &conn) {
-                LOG4CXX_INFO(logger, "Erase connection from the connection pool")
+                LOG4CXX_INFO(logger, "Erase connection from the connection pool");
                 lock_type lock{conn_mutex_};
                 auto f = std::find(connections_.begin(), connections_.end(), conn);
                 if (f != connections_.end()) {
@@ -87,7 +87,8 @@ namespace redis_async {
             bool next_event(events::execute &evt) {
                 lock_type lock{event_mutex_};
                 if (!queue_.empty()) {
-                    LOG4CXX_INFO(logger, alias() << " queue size " << queue_.size() << " (dequeue)")
+                    LOG4CXX_INFO(logger, alias()
+                                             << " queue size " << queue_.size() << " (dequeue)");
                     evt = queue_.front();
                     queue_.pop();
                     return true;
@@ -98,7 +99,7 @@ namespace redis_async {
             void enqueue_event(events::execute &&evt) {
                 lock_type lock{event_mutex_};
                 queue_.push(::std::move(evt));
-                LOG4CXX_INFO(logger, alias() << " queue size " << queue_.size() << " (enqueue)")
+                LOG4CXX_INFO(logger, alias() << " queue size " << queue_.size() << " (enqueue)");
             }
 
             void clear_queue(error::connection_error const &ec) {
@@ -115,7 +116,7 @@ namespace redis_async {
             void create_new_connection(const connection_pool_ptr &pool) {
                 if (closed_)
                     return;
-                LOG4CXX_INFO(logger, "Create new " << alias() << " connection")
+                LOG4CXX_INFO(logger, "Create new " << alias() << " connection");
                 connection_ptr conn = basic_connection::create(
                     service_, co_,
                     {[pool](connection_ptr c) { pool->connection_ready(c); },
@@ -127,11 +128,11 @@ namespace redis_async {
                 {
                     lock_type lock{conn_mutex_};
                     connections_.push_back(conn);
-                    LOG4CXX_INFO(logger, alias() << " pool size " << connections_.size())
+                    LOG4CXX_INFO(logger, alias() << " pool size " << connections_.size());
                 }
             }
             void connection_ready(connection_ptr c) {
-                LOG4CXX_INFO(logger, "Connection " << alias() << " ready")
+                LOG4CXX_INFO(logger, "Connection " << alias() << " ready");
 
                 events::execute evt;
                 if (next_event(evt)) {
@@ -145,16 +146,16 @@ namespace redis_async {
                 }
             }
             void connection_terminated(connection_ptr c) {
-                LOG4CXX_INFO(logger, "Connection " << alias() << " gracefully terminated")
+                LOG4CXX_INFO(logger, "Connection " << alias() << " gracefully terminated");
                 erase_connection(c);
 
                 if (connections_.empty() && closed_ && closed_callback_) {
                     closed_callback_();
                 }
-                LOG4CXX_INFO(logger, alias() << " pool size " << connections_.size())
+                LOG4CXX_INFO(logger, alias() << " pool size " << connections_.size());
             }
             void connection_error(connection_ptr c, error::connection_error const &ec) {
-                LOG4CXX_INFO(logger, "Connection " << alias() << " error: " << ec.what())
+                LOG4CXX_INFO(logger, "Connection " << alias() << " error: " << ec.what());
                 erase_connection(c);
                 clear_queue(ec);
             }
@@ -170,7 +171,7 @@ namespace redis_async {
                 std::visit(serializer_t(evt.buff), cmd);
 
                 if (get_idle_connection(conn)) {
-                    LOG4CXX_INFO(logger, "Connection to " << alias() << " is idle")
+                    LOG4CXX_INFO(logger, "Connection to " << alias() << " is idle");
                     conn->execute(std::move(evt));
                 } else {
                     if (!closed_ && connections_.size() < pool_size_) {
@@ -189,13 +190,13 @@ namespace redis_async {
                     if (queue_.empty()) {
                         close_connections();
                     } else {
-                        LOG4CXX_INFO(logger, "Wait for outstanding tasks to finish")
+                        LOG4CXX_INFO(logger, "Wait for outstanding tasks to finish");
                     }
                 }
             }
             void close_connections() {
                 LOG4CXX_INFO(logger, "Close connection pool " << alias() << " pool size "
-                                                              << connections_.size())
+                                                              << connections_.size());
                 if (!connections_.empty()) {
                     lock_type lock(conn_mutex_);
                     connections_container copy = connections_;
@@ -214,8 +215,9 @@ namespace redis_async {
             : pimpl_(new impl(service, pool_size, co)) {
         }
 
-        connection_pool::~connection_pool(){
-            LOG4CXX_TRACE(logger, "*** connection_pool::~connection_pool()")}
+        connection_pool::~connection_pool() {
+            LOG4CXX_TRACE(logger, "*** connection_pool::~connection_pool()");
+        }
 
         rdalias const &connection_pool::alias() const {
             return pimpl_->alias();
