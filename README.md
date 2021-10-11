@@ -1,3 +1,4 @@
+![workflow](https://github.com/Greenvi4/redis_async/actions/workflows/main.yml/badge.svg)
 # redis_async
 Асинхронный клиент для Redis.
 
