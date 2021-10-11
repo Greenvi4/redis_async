@@ -10,8 +10,3 @@ target_link_libraries(${PROJECT_NAME}_test
         pthread
     )
 add_test(unit_tests ${PROJECT_NAME}_test)
-install(TARGETS ${PROJECT_NAME}_test
-            RUNTIME
-                DESTINATION bin
-                COMPONENT tests
-       )
