@@ -15,7 +15,7 @@ namespace redis_async {
             : service_(std::make_shared<asio_config::io_service>())
             , pool_size_(pool_size)
             , state_(running) {
-            LOG4CXX_TRACE(logger, "Initializing rd_service db service");
+            LOG4CXX_TRACE(logger_def, "Initializing rd_service db service");
         }
 
         redis_impl::~redis_impl() {
@@ -90,9 +90,9 @@ namespace redis_async {
                 if (!pool_size.is_initialized()) {
                     pool_size = pool_size_;
                 }
-                LOG4CXX_INFO(logger,
+                LOG4CXX_INFO(logger_def,
                              "Create a new connection pool " << co.alias << " size " << *pool_size);
-                LOG4CXX_INFO(logger, "Register new connection " << co.uri << "[" << co.database
+                LOG4CXX_INFO(logger_def, "Register new connection " << co.uri << "[" << co.database
                                                                 << "]"
                                                                 << " with alias " << co.alias);
                 connections_.insert(std::make_pair(
