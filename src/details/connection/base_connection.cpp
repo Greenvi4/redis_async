@@ -8,7 +8,8 @@
 namespace redis_async {
     namespace details {
 
-        log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger("redis_async.connection");
+        log4cxx::LoggerPtr logger_def = log4cxx::Logger::getLogger("redis_async.default");
+        log4cxx::LoggerPtr logger_states = log4cxx::Logger::getLogger("redis_async.states");
 
         template <typename TransportType>
         std::shared_ptr<concrete_connection<TransportType>>

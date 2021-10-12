@@ -36,7 +36,7 @@ namespace redis_async {
 
     void rd_service::stop() {
         lock_type lock(db_service_lock());
-        LOG4CXX_INFO(details::logger, "Stop db service");
+        LOG4CXX_INFO(details::logger_def, "Stop db service");
 
         auto &pimpl = impl_ptr();
         if (pimpl) {

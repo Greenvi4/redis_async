@@ -9,11 +9,12 @@
 
 int main(int argc, char **argv) {
     log4cxx::helpers::Properties props;
-    props.setProperty("log4j.rootLogger", "WARN, Global");
-    props.setProperty("log4j.appender.Global", "org.apache.log4j.ConsoleAppender");
-    props.setProperty("log4j.appender.Global.layout", "org.apache.log4j.PatternLayout");
-    props.setProperty("log4j.appender.Global.layout.ConversionPattern",
+    props.setProperty("log4j.rootLogger", "WARN, redis_async");
+    props.setProperty("log4j.appender.redis_async", "org.apache.log4j.ConsoleAppender");
+    props.setProperty("log4j.appender.redis_async.layout", "org.apache.log4j.PatternLayout");
+    props.setProperty("log4j.appender.redis_async.layout.ConversionPattern",
                       "<%d{dd-MM-yy HH:mm::ss.SSS}> [%c %p]: %m%n");
+    props.setProperty("log4j.logger.redis_async.states", "TRACE");
     log4cxx::PropertyConfigurator::configure(props);
 
     testing::InitGoogleTest(&argc, argv);
