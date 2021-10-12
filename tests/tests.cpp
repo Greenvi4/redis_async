@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
     props.setProperty("log4j.appender.redis_async.layout", "org.apache.log4j.PatternLayout");
     props.setProperty("log4j.appender.redis_async.layout.ConversionPattern",
                       "<%d{dd-MM-yy HH:mm::ss.SSS}> [%c %p]: %m%n");
-    props.setProperty("log4j.logger.redis_async.states", "TRACE");
+    props.setProperty("log4j.logger.redis_async.states", "WARN");
     log4cxx::PropertyConfigurator::configure(props);
 
     testing::InitGoogleTest(&argc, argv);
