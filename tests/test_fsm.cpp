@@ -47,36 +47,71 @@ TEST(TestFSM, NormalFlow) {
     using redis_async::details::events::execute;
     using redis_async::details::events::recv;
     using redis_async::details::events::terminate;
+    using redis_async::error::query_error;
 
     asio_config::io_service_ptr svc(new asio_config::io_service);
 
     fsm_ptr c(new fsm(svc, {}));
     for (int i = 0; i < fsm::nr_regions::value; ++i)
         ASSERT_EQ(c->current_state()[i], static_cast<int>(States::unplugged));
-    // auth
+
+    // unplug -> conn_opts -> connecting -> complete -> auth
+    /// @todo нужно connect_async переделать в dummy_transport
     c->process_event("main=tcp://password@localhost:6379/1"_redis);
     for (int i = 0; i < fsm::nr_regions::value; ++i)
         ASSERT_EQ(c->current_state()[i], static_cast<int>(States::authn));
+
+    // auth -> complete -> idle
     c->process_event(complete{});
     for (int i = 0; i < fsm::nr_regions::value; ++i)
         ASSERT_EQ(c->current_state()[i], static_cast<int>(States::idle));
 
-    // execute
+    // idle -> execute -> query
     c->process_event(execute{});
     for (int i = 0; i < fsm::nr_regions::value; ++i)
         ASSERT_EQ(c->current_state()[i], static_cast<int>(States::query));
-    // defer terminate
+
+    // query -> query_error -> idle
+    c->process_event(query_error(""));
+    for (int i = 0; i < fsm::nr_regions::value; ++i)
+        ASSERT_EQ(c->current_state()[i], static_cast<int>(States::idle));
+
+    // again got to query
+    // store terminate event
+    // stay in query
+    c->process_event(execute{});
     c->process_event(terminate{});
     for (int i = 0; i < fsm::nr_regions::value; ++i)
         ASSERT_EQ(c->current_state()[i], static_cast<int>(States::query));
 
-    // recv and go to terminate
+    // query -> recv -> idle -> terminate -> terminated
     c->process_event(recv{});
     for (int i = 0; i < fsm::nr_regions::value; ++i)
         ASSERT_EQ(c->current_state()[i], static_cast<int>(States::terminated));
 }
 
-TEST(TestFSM, ConnectionError) {
+TEST(TestFSM, AuthnFlow) {
+    using redis_async::details::events::complete;
+    using redis_async::details::events::execute;
+    using redis_async::details::events::recv;
+    using redis_async::details::events::terminate;
+    using redis_async::error::query_error;
+
+    asio_config::io_service_ptr svc(new asio_config::io_service);
+
+    fsm_ptr c(new fsm(svc, {}));
+    c->process_event("main=tcp://password@localhost:6379/1"_redis);
+    c->process_event(recv{});
+    for (int i = 0; i < fsm::nr_regions::value; ++i)
+        ASSERT_EQ(c->current_state()[i], static_cast<int>(States::idle));
+
+    // idle -> execute -> query
+    c->process_event(terminate{});
+    for (int i = 0; i < fsm::nr_regions::value; ++i)
+        ASSERT_EQ(c->current_state()[i], static_cast<int>(States::terminated));
+}
+
+TEST(TestFSM, TerminateFlow) {
     using redis_async::details::events::complete;
     using redis_async::details::events::execute;
     using redis_async::details::events::recv;
@@ -85,34 +120,74 @@ TEST(TestFSM, ConnectionError) {
 
     asio_config::io_service_ptr svc(new asio_config::io_service);
 
-    // check on connection error
+    // unplug -> terminated
+    fsm_ptr c(new fsm(svc, {}));
+    c->process_event(terminate());
+    for (int i = 0; i < fsm::nr_regions::value; ++i)
+        ASSERT_EQ(c->current_state()[i], static_cast<int>(States::terminated));
+
+    // unplug -> connecting -> auth -> terminated
+    c.reset(new fsm(svc, {}));
+    c->process_event("main=tcp://password@localhost:6379/1"_redis);
+    c->process_event(terminate());
+    for (int i = 0; i < fsm::nr_regions::value; ++i)
+        ASSERT_EQ(c->current_state()[i], static_cast<int>(States::authn));
+    c->process_event(recv{});
+    for (int i = 0; i < fsm::nr_regions::value; ++i)
+        ASSERT_EQ(c->current_state()[i], static_cast<int>(States::terminated));
+
+    // unplug -> connecting -> auth -> idle -> terminated
+    c.reset(new fsm(svc, {}));
+    c->process_event("main=tcp://password@localhost:6379/1"_redis);
+    c->process_event(recv{});
+    c->process_event(terminate());
+    for (int i = 0; i < fsm::nr_regions::value; ++i)
+        ASSERT_EQ(c->current_state()[i], static_cast<int>(States::terminated));
+
+    // unplug -> connecting -> auth -> idle -> query -> terminated
+    c.reset(new fsm(svc, {}));
+    c->process_event("main=tcp://password@localhost:6379/1"_redis);
+    c->process_event(recv{});
+    c->process_event(execute{});
+    c->process_event(terminate());
+    for (int i = 0; i < fsm::nr_regions::value; ++i)
+        ASSERT_EQ(c->current_state()[i], static_cast<int>(States::query));
+    c->process_event(recv{});
+    for (int i = 0; i < fsm::nr_regions::value; ++i)
+        ASSERT_EQ(c->current_state()[i], static_cast<int>(States::terminated));
+
+    // unplug -> connecting -> auth -> idle -> query -> idle -> terminated
+    c.reset(new fsm(svc, {}));
+    c->process_event("main=tcp://password@localhost:6379/1"_redis);
+    c->process_event(recv{});
+    c->process_event(execute{});
+    c->process_event(recv{});
+    c->process_event(terminate());
+    for (int i = 0; i < fsm::nr_regions::value; ++i)
+        ASSERT_EQ(c->current_state()[i], static_cast<int>(States::terminated));
+}
+
+TEST(TestFSM, ConnectionErrorFlow) {
+    using redis_async::details::events::complete;
+    using redis_async::details::events::execute;
+    using redis_async::details::events::recv;
+    using redis_async::details::events::terminate;
+    using redis_async::error::connection_error;
+
+    asio_config::io_service_ptr svc(new asio_config::io_service);
+
+    // unplug -> connecting -> auth -> terminated
     fsm_ptr c(new fsm(svc, {}));
     c->process_event("main=tcp://password@localhost:6379/1"_redis);
     c->process_event(connection_error(""));
     for (int i = 0; i < fsm::nr_regions::value; ++i)
         ASSERT_EQ(c->current_state()[i], static_cast<int>(States::terminated));
 
-    // check on idle error
+    // unplug -> connecting -> auth -> idle -> query -> terminated
     c.reset(new fsm(svc, {}));
     c->process_event("main=tcp://password@localhost:6379/1"_redis);
     c->process_event(recv{});
-    for (int i = 0; i < fsm::nr_regions::value; ++i)
-        ASSERT_EQ(c->current_state()[i], static_cast<int>(States::idle));
-
-    c->process_event(connection_error(""));
-    for (int i = 0; i < fsm::nr_regions::value; ++i)
-        ASSERT_EQ(c->current_state()[i], static_cast<int>(States::terminated));
-
-    // check on query error
-    c.reset(new fsm(svc, {}));
-    c->process_event("main=tcp://password@localhost:6379/1"_redis);
-    c->process_event(recv{});
-    for (int i = 0; i < fsm::nr_regions::value; ++i)
-        ASSERT_EQ(c->current_state()[i], static_cast<int>(States::idle));
-
     c->process_event(execute{});
-    for (int i = 0; i < fsm::nr_regions::value; ++i)
-        ASSERT_EQ(c->current_state()[i], static_cast<int>(States::query));
     c->process_event(connection_error(""));
     for (int i = 0; i < fsm::nr_regions::value; ++i)
         ASSERT_EQ(c->current_state()[i], static_cast<int>(States::terminated));
