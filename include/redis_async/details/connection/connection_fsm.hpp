@@ -249,8 +249,16 @@ namespace redis_async {
                 LOG4CXX_ERROR(logger_states, "Conn#" << fsm.number()
                                                      << ": no transition from state " << state
                                                      << " on event " << demangle<Event>());
-                BOOST_ASSERT(false);
                 throw std::runtime_error("invalid event for transaction");
+            }
+
+            // default exception handler. Can be replaced in the Derived SM class.
+            template <class FSM, class Event>
+            void exception_caught(Event const &, FSM &fsm, const std::exception &e) {
+                LOG4CXX_ERROR(logger_states, "Conn#" << fsm.number()
+                                                     << ": rethrow exception \"" << e.what()
+                                                     << "\" on event " << demangle<Event>());
+                throw e;
             }
 
             //@{
