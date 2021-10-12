@@ -2,9 +2,13 @@ name: redis_async
 
 on:
   push:
-    branches: [ master dev ]
+    branches: 
+      - master
+      - dev
   pull_request:
-    branches: [ master dev ]
+    branches:
+      - master
+      - dev
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
