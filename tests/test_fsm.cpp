@@ -192,3 +192,22 @@ TEST(TestFSM, ConnectionErrorFlow) {
     for (int i = 0; i < fsm::nr_regions::value; ++i)
         ASSERT_EQ(c->current_state()[i], static_cast<int>(States::terminated));
 }
+
+TEST(TestFSM_DeathTest, InvalidEvent) {
+    ASSERT_DEATH(
+        {
+            using redis_async::details::events::complete;
+            using redis_async::details::events::execute;
+            using redis_async::details::events::recv;
+            using redis_async::details::events::terminate;
+            using redis_async::error::connection_error;
+
+            asio_config::io_service_ptr svc(new asio_config::io_service);
+
+            // unplug -> connecting -> auth -> terminated
+            fsm_ptr c(new fsm(svc, {}));
+            c->process_event("main=tcp://password@localhost:6379/1"_redis);
+            c->process_event("main=tcp://password@localhost:6379/1"_redis);
+        },
+        "");
+}
