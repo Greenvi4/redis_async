@@ -89,7 +89,7 @@ namespace redis_async {
                 if (!queue_.empty()) {
                     LOG4CXX_INFO(logger_def, alias()
                                              << " queue size " << queue_.size() << " (dequeue)");
-                    evt = queue_.front();
+                    evt = std::move(queue_.front());
                     queue_.pop();
                     return true;
                 }
@@ -105,7 +105,7 @@ namespace redis_async {
             void clear_queue(error::connection_error const &ec) {
                 lock_type lock(event_mutex_);
                 while (!queue_.empty()) {
-                    auto req = queue_.front();
+                    auto req = std::move(queue_.front());
                     queue_.pop();
                     if (req.error)
                         req.error(ec);

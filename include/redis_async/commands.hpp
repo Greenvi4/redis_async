@@ -15,14 +15,6 @@
 namespace redis_async {
 
     struct single_command_t {
-
-        template <bool...>
-        struct bool_pack;
-        template <bool... bs>
-        using all_true = std::is_same<bool_pack<bs..., true>, bool_pack<true, bs...>>;
-        template <class R, class... Ts>
-        using are_all_constructible = all_true<std::is_constructible<R, Ts>::value...>;
-
         using args_container_t = std::vector<std::string>;
         args_container_t arguments;
 
