@@ -7,8 +7,8 @@
 
 #include <redis_async/redis_async.hpp>
 
+#include <boost/asio/steady_timer.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/asio/deadline_timer.hpp>
 #include <list>
 #include <utility>
 
@@ -36,8 +36,8 @@ namespace redis_async {
             class Client {
             public:
                 using optional_size = redis_async::optional_size;
-                using timer = boost::asio::deadline_timer;
-                using duration_type = timer::duration_type;
+                using timer = boost::asio::steady_timer;
+                using duration = timer::duration;
 
                 explicit Client();
                 ~Client();
@@ -49,8 +49,7 @@ namespace redis_async {
 
                 template <typename WaitHandler>
                 BOOST_ASIO_INITFN_RESULT_TYPE(WaitHandler, void(boost::system::error_code))
-                add_deadline_timer(const duration_type &expiry_time,
-                                   BOOST_ASIO_MOVE_ARG(WaitHandler) handler) {
+                add_timer(const duration &expiry_time, BOOST_ASIO_MOVE_ARG(WaitHandler) handler) {
                     m_timers.emplace_back(*rd_service::io_service(), expiry_time);
                     m_timers.back().async_wait(std::forward<WaitHandler>(handler));
                 }

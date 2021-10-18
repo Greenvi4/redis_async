@@ -7,6 +7,7 @@
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/process/child.hpp>
+#include <boost/process/io.hpp>
 #include <log4cxx/logger.h>
 #include <memory>
 
@@ -20,7 +21,8 @@ namespace test_server {
             : logger(log4cxx::Logger::getLogger("redis_async.test.server")) {
             std::string str = boost::algorithm::join(args, " ");
             LOG4CXX_INFO(logger, "going to fork to start: " << str);
-            auto process = new boost::process::child(str);
+            auto process =
+                new boost::process::child(str, boost::process::std_out > boost::process::null);
             child.reset(process);
         }
         ~TestServer() {

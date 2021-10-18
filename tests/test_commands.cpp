@@ -30,7 +30,7 @@ TEST(CommandsTest, ping) {
 
     auto inst = std::make_unique<rt::Client>();
     inst->add_connection("tcp", 1);
-    inst->add_deadline_timer(boost::posix_time::seconds(5), on_time_expiry);
+    inst->add_timer(std::chrono::seconds(5), on_time_expiry);
     auto error_handler = std::bind(on_rd_error, boost::ref(inst), std::placeholders::_1);
 
     rd_service::execute(
@@ -62,7 +62,7 @@ TEST(CommandsTest, echo) {
 
     auto inst = std::make_unique<rt::Client>();
     inst->add_connection("tcp", 1);
-    inst->add_deadline_timer(boost::posix_time::seconds(5), on_time_expiry);
+    inst->add_timer(std::chrono::seconds(5), on_time_expiry);
     auto error_handler = std::bind(on_rd_error, boost::ref(inst), std::placeholders::_1);
 
     const std::string msg = "Hello, World!";
@@ -91,7 +91,7 @@ TEST(CommandsTest, set_get) {
 
     auto inst = std::make_unique<rt::Client>();
     inst->add_connection("tcp", 1);
-    inst->add_deadline_timer(boost::posix_time::seconds(5), on_time_expiry);
+    inst->add_timer(std::chrono::seconds(5), on_time_expiry);
     auto error_handler = std::bind(on_rd_error, boost::ref(inst), std::placeholders::_1);
 
     const std::string key = "some_key";
@@ -159,7 +159,7 @@ TEST(CommandsTest, keys) {
 
     auto inst = std::make_unique<rt::Client>();
     inst->add_connection("tcp", 1);
-    inst->add_deadline_timer(boost::posix_time::seconds(5), on_time_expiry);
+    inst->add_timer(std::chrono::seconds(5), on_time_expiry);
     auto error_handler = std::bind(on_rd_error, boost::ref(inst), std::placeholders::_1);
 
     rd_service::execute(
@@ -237,7 +237,7 @@ TEST(CommandsTest, mset_mget) {
 
     auto inst = std::make_unique<rt::Client>();
     inst->add_connection("tcp", 1);
-    inst->add_deadline_timer(boost::posix_time::seconds(5), on_time_expiry);
+    inst->add_timer(std::chrono::seconds(5), on_time_expiry);
     auto error_handler = std::bind(on_rd_error, boost::ref(inst), std::placeholders::_1);
 
     rd_service::execute(
@@ -283,7 +283,7 @@ TEST(CommandsTest, hash) {
 
     auto inst = std::make_unique<rt::Client>();
     inst->add_connection("tcp", 1);
-    inst->add_deadline_timer(boost::posix_time::seconds(5), on_time_expiry);
+    inst->add_timer(std::chrono::seconds(5), on_time_expiry);
     auto error_handler = std::bind(on_rd_error, boost::ref(inst), std::placeholders::_1);
 
     rd_service::execute(
@@ -352,7 +352,7 @@ TEST(CommandsTest, lists) {
 
     auto inst = std::make_unique<rt::Client>();
     inst->add_connection("tcp", 1);
-    inst->add_deadline_timer(boost::posix_time::seconds(5), on_time_expiry);
+    inst->add_timer(std::chrono::seconds(5), on_time_expiry);
     auto error_handler = std::bind(on_rd_error, boost::ref(inst), std::placeholders::_1);
 
     rd_service::execute(
@@ -457,7 +457,7 @@ TEST(CommandsTest, sets) {
 
     auto inst = std::make_unique<rt::Client>();
     inst->add_connection("tcp", 1);
-    inst->add_deadline_timer(boost::posix_time::seconds(5), on_time_expiry);
+    inst->add_timer(std::chrono::seconds(5), on_time_expiry);
     auto error_handler = std::bind(on_rd_error, boost::ref(inst), std::placeholders::_1);
 
     rd_service::execute(
@@ -648,7 +648,7 @@ TEST(CommandsTest, hadnle_exceptions) {
 
     auto inst = std::make_unique<rt::Client>();
     inst->add_connection("tcp", 1);
-    inst->add_deadline_timer(boost::posix_time::seconds(5), on_time_expiry);
+    inst->add_timer(std::chrono::seconds(5), on_time_expiry);
 
     rd_service::execute(
         "tcp"_rd, cmd::get("some_wrong_key"),
